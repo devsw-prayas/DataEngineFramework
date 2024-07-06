@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="DataEngineCore" />
+        <module name="Testing" />
+      </profile>
+      <profile name="Annotation profile for DataEngine" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processor name="processing.core.BehaviourProcessor" />
+        <processor name="processing.core.EngineNatureProcessor" />
+        <processor name="processing.core.ImplementationProcessor" />
+        <module name="DataEngine" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="Logger" target="17" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

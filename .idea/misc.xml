@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ExternalStorageConfigurationManager" enabled="true" />
+  <component name="MavenProjectsManager">
+    <option name="originalFiles">
+      <list>
+        <option value="$PROJECT_DIR$/DataEngineUtilities/pom.xml" />
+        <option value="$PROJECT_DIR$/DataEngineProcessiing/pom.xml" />
+        <option value="$PROJECT_DIR$/DataEngine/pom.xml" />
+        <option value="$PROJECT_DIR$/DataEngiineCore/pom.xml" />
+        <option value="$PROJECT_DIR$/DataEngineCore/pom.xml" />
+        <option value="$PROJECT_DIR$/CodeGeneration/pom.xml" />
+        <option value="$PROJECT_DIR$/DataEngineBase/pom.xml" />
+        <option value="$PROJECT_DIR$/Logger/pom.xml" />
+        <option value="$PROJECT_DIR$/Testing/pom.xml" />
+      </list>
+    </option>
+    <option name="ignoredFiles">
+      <set>
+        <option value="$PROJECT_DIR$/DataEngine/DataEngineCore/pom.xml" />
+        <option value="$PROJECT_DIR$/DataEngineCore/DataEngine/pom.xml" />
+        <option value="$PROJECT_DIR$/Logger/pom.xml" />
+      </set>
+    </option>
+  </component>
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_17" default="true" project-jdk-name="17" project-jdk-type="JavaSDK">
+    <output url="file://$PROJECT_DIR$/out" />
+  </component>
+</project>
