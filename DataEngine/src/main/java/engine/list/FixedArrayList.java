@@ -263,7 +263,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @SuppressWarnings("unchecked")
     @Behaviour(Type.IMMUTABLE)
     public E get(int index) {
-        if(index > this.getActiveSize() | index < this.getActiveSize())
+        if(index > this.getActiveSize() | index < 0)
             throw new IndexOutOfBoundsException("Invalid index");
         return (E) elements[index];
     }

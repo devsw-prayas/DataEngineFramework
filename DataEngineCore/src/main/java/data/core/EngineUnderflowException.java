@@ -5,7 +5,7 @@ package data.core;
  * an empty data engine
  * @author Devsw
  */
-public class EngineUnderflowException extends Exception {
+public class EngineUnderflowException extends RuntimeException {
   
 	private static final long serialVersionUID = -7184207086532541588L;
 

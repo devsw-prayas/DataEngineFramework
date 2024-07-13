@@ -247,7 +247,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @Behaviour(Type.IMMUTABLE)
     @SuppressWarnings("unchecked")
     public E get(int index) {
-        if (index > this.getActiveSize() | index < this.getActiveSize())
+        if (index > this.getActiveSize() | index < 0)
             throw new IndexOutOfBoundsException("Invalid index");
         return (E) elements[index];
     }

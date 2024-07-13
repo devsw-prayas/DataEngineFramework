@@ -6,11 +6,11 @@ package data.core;
  *
  * @author Devsw
  */
-public class EngineOverflowException extends Exception{
-    
-	private static final long serialVersionUID = 8777146242623111540L;
+public class EngineOverflowException extends RuntimeException{
 
-	public EngineOverflowException() {
+    private static final long serialVersionUID = 8777146242623111540L;
+
+    public EngineOverflowException() {
         super("Data Engine Overflow");
     }
 
