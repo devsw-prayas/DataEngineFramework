@@ -152,7 +152,7 @@ public abstract class AbstractDataEngine<E> implements DataEngine<E>, Iterable<E
      * @param <T> A subclass of {@code DataEngine}
      */
     @Behaviour(Type.UNSUPPORTED)
-    public <T extends DataEngine<E>> T mergeFrom(T de, int start) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T de, int start) throws EngineUnderflowException, ImmutableException {
         throw new UnsupportedOperationException("No possible implementation");
     }
 
@@ -167,7 +167,7 @@ public abstract class AbstractDataEngine<E> implements DataEngine<E>, Iterable<E
      * @param <T> A subclass of {@code DataEngine}
      */
     @Behaviour(Type.UNSUPPORTED)
-    public <T extends DataEngine<E>> T rangeMerge(T de, int start, int end) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T de, int start, int end) throws EngineUnderflowException, ImmutableException {
         throw new UnsupportedOperationException("No possible implementation");
     }
 }

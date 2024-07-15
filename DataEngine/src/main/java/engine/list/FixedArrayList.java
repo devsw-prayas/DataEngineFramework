@@ -327,16 +327,10 @@ public class FixedArrayList<E> extends AbstractList<E> {
      * @return Returns an array containing all the elements of the sub-list
      * @throws EngineUnderflowException Thrown when the list is empty
      */
-    @SuppressWarnings("unchecked")
     @Override
     @Behaviour(Type.IMMUTABLE)
-    public E[] rangedToArray(int start) throws EngineUnderflowException {
-        if(this.getActiveSize() == 0) throw new EngineUnderflowException("List is empty");
-        else if(this.getActiveSize() < start) throw new IndexOutOfBoundsException("Invalid start position");
-        E[] copy =(E[]) new Object[this.getActiveSize() -start];
-        for (int i = start-1; i < this.getActiveSize(); i++)
-            copy[i - start +1] = this.get(i);
-        return Arrays.copyOf(copy, getActiveSize() - start);
+    public E[] toArray(int start) throws EngineUnderflowException {
+        return toArray(start, getActiveSize());
     }
 
     /**
@@ -350,7 +344,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Override
     @SuppressWarnings("unchecked")
     @Behaviour(Type.IMMUTABLE)
-    public E[] rangedToArray(int start, int end) throws EngineUnderflowException {
+    public E[] toArray(int start, int end) throws EngineUnderflowException {
         if(this.getActiveSize() == 0) throw new EngineUnderflowException("list is empty");
         else if (end < start | end > this.getActiveSize() | start > this.getActiveSize() | end < 0 | start < 0)
             throw new IndexOutOfBoundsException("Invalid subarray range");
@@ -399,7 +393,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Override
     @SuppressWarnings("unchecked")
     @Behaviour(Type.IMMUTABLE)
-    public <T extends DataEngine<E>> boolean rangeEquals(T list, int start, int end) {
+    public <T extends DataEngine<E>> boolean equals(T list, int start, int end) {
         int size = this.getActiveSize();
         int size1 = this.getActiveSize();
         if(!(list instanceof AbstractList<?>))
@@ -456,7 +450,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.MUTABLE)
     @SuppressWarnings("unchecked")
-    public <T extends DataEngine<E>> T rangeMerge(T list, int start, int end) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start, int end) throws EngineUnderflowException, ImmutableException {
         if(!(list instanceof AbstractList<?>))
             throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
         else if(list.getActiveSize() == 0)
@@ -465,7 +459,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
             throw new IndexOutOfBoundsException("Invalid range index");
         else {
             //Generate a copy
-            E[] copy1 = list.rangedToArray(start, end);
+            E[] copy1 = list.toArray(start, end);
             //Generate another copy
             E[] copy2 = this.toArray();
             //Now generate a new one
@@ -492,7 +486,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.MUTABLE)
     @SuppressWarnings("unchecked")
-    public <T extends DataEngine<E>> T mergeFrom(T list, int start) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start) throws EngineUnderflowException, ImmutableException {
         if(!(list instanceof AbstractList<?>))
             throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
         else if(list.getActiveSize() == 0)
@@ -501,7 +495,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
             throw new IndexOutOfBoundsException("Invalid start index");
         else {
             //Generate a copy
-            E[] copy1 = list.rangedToArray(start);
+            E[] copy1 = list.toArray(start);
             //Generate another copy
             E[] copy2 = this.toArray();
 

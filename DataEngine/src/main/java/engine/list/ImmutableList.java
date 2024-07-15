@@ -51,12 +51,12 @@ public class ImmutableList<E> extends FixedArrayList<E>{
     }
 
     @Override
-    public <T extends DataEngine<E>> T mergeFrom(T list, int start) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start) throws EngineUnderflowException, ImmutableException {
         throw new ImmutableException("Unsupported for IMMUTABLE implementations");
     }
 
     @Override
-    public <T extends DataEngine<E>> T rangeMerge(T list, int start, int end) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start, int end) throws EngineUnderflowException, ImmutableException {
         throw new ImmutableException("Unsupported for IMMUTABLE implementations");
     }
 

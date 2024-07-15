@@ -526,7 +526,6 @@ public class ConcurrentArrayListTemp<E> extends AbstractList<E> {
     /**
      * When the {@code activeSize} is less than {@code SHRINK_LOAD_FACTOR * maxCapacity}, for an
      * underlying array it will end up shrinking by {@code Math.floor(GOLDEN_RATIO * maxCapacity)}
-     * Cam have an asynchronous implementation in thread-safe data engines.
      */
     @Override
     @Behaviour(Type.MUTABLE)
@@ -539,7 +538,7 @@ public class ConcurrentArrayListTemp<E> extends AbstractList<E> {
             //First check if the array is sparsely populated
             if ((getActiveSize() * 1.0) / getMaxCapacity() < SHRINK_LOAD_FACTOR) {
                 //Then shrink it
-                int newMaxCapacity = (int) (Math.floor((getMaxCapacity() - getMaxCapacity() * GOLDEN_RATIO)));
+                int newMaxCapacity = (int) (Math.floor((getMaxCapacity() * GOLDEN_RATIO - getMaxCapacity())));
                 try {
                     E[] temp = this.toArray();
                     this.elements = Arrays.copyOf(temp, newMaxCapacity);
@@ -653,7 +652,7 @@ public class ConcurrentArrayListTemp<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     @SuppressWarnings("unchecked")
-    public E[] rangedToArray(int start) throws EngineUnderflowException {
+    public E[] toArray(int start) throws EngineUnderflowException {
         if(!isBufferFlushed.get()) flushBuffer();
         if (this.getActiveSize() == 0) throw new EngineUnderflowException("List is empty");
         else if (this.getActiveSize() < start) throw new IndexOutOfBoundsException("Invalid start position");
@@ -683,7 +682,7 @@ public class ConcurrentArrayListTemp<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     @SuppressWarnings("unchecked")
-    public E[] rangedToArray(int start, int end) throws EngineUnderflowException {
+    public E[] toArray(int start, int end) throws EngineUnderflowException {
         if(!isBufferFlushed.get()) flushBuffer();
         if (this.getActiveSize() == 0) throw new EngineUnderflowException("list is empty");
         else if (end < start | end > this.getActiveSize() | start > this.getActiveSize() | end < 0 | start < 0)
@@ -775,7 +774,7 @@ public class ConcurrentArrayListTemp<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     @SuppressWarnings("unchecked")
-    public <T extends DataEngine<E>> boolean rangeEquals(T list, int start, int end) {
+    public <T extends DataEngine<E>> boolean equals(T list, int start, int end) {
         if(!isBufferFlushed.get()) flushBuffer();
         int size = this.getActiveSize();
         int size1 = list.getActiveSize();
@@ -862,7 +861,7 @@ public class ConcurrentArrayListTemp<E> extends AbstractList<E> {
     @Override
     @SuppressWarnings("unchecked")
     @Behaviour(Type.MUTABLE)
-    public <T extends DataEngine<E>> T mergeFrom(T list, int start) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start) throws EngineUnderflowException, ImmutableException {
         if(!isBufferFlushed.get()) flushBuffer();
         if(!(list instanceof AbstractList<?>))
             throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
@@ -872,7 +871,7 @@ public class ConcurrentArrayListTemp<E> extends AbstractList<E> {
             throw new IndexOutOfBoundsException("Invalid start index");
         else {
             //Generate a copy
-            E[] copy1 = list.rangedToArray(start);
+            E[] copy1 = list.toArray(start);
             //Generate another copy
             E[] copy2 = this.toArray();
 
@@ -901,7 +900,7 @@ public class ConcurrentArrayListTemp<E> extends AbstractList<E> {
     @Override
     @SuppressWarnings("unchecked")
     @Behaviour(Type.MUTABLE)
-    public <T extends DataEngine<E>> T rangeMerge(T list, int start, int end) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start, int end) throws EngineUnderflowException, ImmutableException {
         if(!isBufferFlushed.get()) flushBuffer();
         if(!(list instanceof AbstractList<?>))
             throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
@@ -911,7 +910,7 @@ public class ConcurrentArrayListTemp<E> extends AbstractList<E> {
             throw new IndexOutOfBoundsException("Invalid range index");
         else {
             //Generate a copy
-            E[] copy1 = list.rangedToArray(start, end);
+            E[] copy1 = list.toArray(start, end);
             //Generate another copy
             E[] copy2 = this.toArray();
             //Now generate a new one

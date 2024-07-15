@@ -67,8 +67,8 @@ public interface DataEngine<E>{
      * @throws EngineUnderflowException Thrown when invoking data engine is empty
      */
     @Behaviour(Type.UNSUPPORTED)
-    default E[] rangedToArray(int start) throws EngineUnderflowException{
-        throw new UnsupportedOperationException("Unimplemented");
+    default E[] toArray(int start) throws EngineUnderflowException{
+        return toArray(start, getActiveSize());
     }
 
     /**
@@ -81,7 +81,7 @@ public interface DataEngine<E>{
      * @throws EngineUnderflowException Thrown when invoking data engine is empty
      */
     @Behaviour(Type.UNSUPPORTED)
-    default E[] rangedToArray(int start, int end) throws EngineUnderflowException{
+    default E[] toArray(int start, int end) throws EngineUnderflowException{
         throw new UnsupportedOperationException("Unimplemented");
     }
 
@@ -143,7 +143,7 @@ public interface DataEngine<E>{
      * @throws EngineUnderflowException Thrown when either of them is empty, or range length is invalid
      */
     @Behaviour(Type.UNSUPPORTED)
-    default <T extends DataEngine<E>> boolean rangeEquals(T de, int start, int end) throws EngineUnderflowException {
+    default <T extends DataEngine<E>> boolean equals(T de, int start, int end) throws EngineUnderflowException {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
