@@ -450,7 +450,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.MUTABLE)
     @SuppressWarnings("unchecked")
-    public <T extends DataEngine<E>> T merge(T list, int start, int end) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start, int end) throws ImmutableException {
         if(!(list instanceof AbstractList<?>))
             throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
         else if(list.getActiveSize() == 0)
@@ -464,15 +464,11 @@ public class FixedArrayList<E> extends AbstractList<E> {
             E[] copy2 = this.toArray();
             //Now generate a new one
             //This method might be inefficient!
-            try {
-                FixedArrayList<E> temp = new FixedArrayList<>(copy1);
-                //Now inject the rest
-                for (E item : copy2) temp.add(item);
-                return (T) (new FixedArrayList<>(temp,
-                        this.getMaxCapacity() + list.getMaxCapacity()));
-            } catch (EngineOverflowException exec) { /*This obviously will be never hit */ }
+            FixedArrayList<E> temp = new FixedArrayList<>(copy1);
+            //Now inject the rest
+            for (E item : copy2) temp.add(item);
+            return (T) (new FixedArrayList<>(temp, this.getMaxCapacity() + list.getMaxCapacity()));
         }
-        return null; //Unreachable
     }
 
     /**
@@ -485,31 +481,8 @@ public class FixedArrayList<E> extends AbstractList<E> {
      */
     @Override
     @Behaviour(Type.MUTABLE)
-    @SuppressWarnings("unchecked")
-    public <T extends DataEngine<E>> T merge(T list, int start) throws EngineUnderflowException, ImmutableException {
-        if(!(list instanceof AbstractList<?>))
-            throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
-        else if(list.getActiveSize() == 0)
-            throw new EngineUnderflowException("List is empty");
-        else if(list.getActiveSize() < start | start < 0)
-            throw new IndexOutOfBoundsException("Invalid start index");
-        else {
-            //Generate a copy
-            E[] copy1 = list.toArray(start);
-            //Generate another copy
-            E[] copy2 = this.toArray();
-
-            //Now generate a new one
-            //This method might be inefficient!
-            try {
-                FixedArrayList<E> temp = new FixedArrayList<>(copy1);
-                //Now inject the rest
-                for (E item : copy2) temp.add(item);
-                return (T) (new FixedArrayList<>(temp,
-                        this.getMaxCapacity() + list.getMaxCapacity() - start));
-            } catch (EngineOverflowException exec) { /*This obviously will be never hit */ }
-        }
-        return null; //Unreachable
+    public <T extends DataEngine<E>> T merge(T list, int start) throws ImmutableException {
+        return merge(list, start, list.getActiveSize());
     }
 
     /**
@@ -521,27 +494,8 @@ public class FixedArrayList<E> extends AbstractList<E> {
      */
     @Override
     @Behaviour(Type.MUTABLE)
-    @SuppressWarnings("unchecked")
-    public <T extends DataEngine<E>> T merge(T list) throws EngineUnderflowException, ImmutableException {
-        if(!(list instanceof AbstractList<?>))
-            throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
-        else if(list.getActiveSize() == 0)
-            throw new EngineUnderflowException("List is empty");
-        else {
-            //Generate a copy
-            E[] copy1 = list.toArray();
-            //Generate another copy
-            E[] copy2 = this.toArray();
-            //Now generate a new one
-            //This method might be inefficient!
-            try {
-                FixedArrayList<E> temp = new FixedArrayList<>(copy1);
-                //Now inject the rest
-                for (E item : copy2) temp.add(item);
-                return (T) (new FixedArrayList<>(temp, this.getMaxCapacity() + list.getMaxCapacity()));
-            } catch (EngineOverflowException exec) { /*This obviously will be never hit */ }
-        }
-        return null; //Unreachable
+    public <T extends DataEngine<E>> T merge(T list) throws ImmutableException {
+        return merge(list, 0, list.getActiveSize());
     }
 
     /**
@@ -554,7 +508,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
         private int currModCount;
         int currPos;
         FixedArrayList<E> connectedList; //Enclosing List
-        boolean next = false;
+        boolean next = false, previous = false;
 
         public FixedArrayListIterator() {
             currPos = 0;
@@ -573,6 +527,17 @@ public class FixedArrayList<E> extends AbstractList<E> {
         public E next() {
             this.next = true;
             return (E)connectedList.elements[currPos++];
+        }
+
+        public boolean hasPrevious(){
+            previous = false;
+            return currPos > -1;
+        }
+
+        @SuppressWarnings("unchecked")
+        public E previous(){
+            previous = true;
+            return (E)connectedList.elements[currPos--];
         }
 
         @Override

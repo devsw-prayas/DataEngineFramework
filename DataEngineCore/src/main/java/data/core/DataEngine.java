@@ -55,7 +55,7 @@ public interface DataEngine<E>{
      * @throws EngineUnderflowException In case, the data engine is empty
      *  an exception is generated
      */
-    E[] toArray() throws EngineUnderflowException;
+    E[] toArray();
 
     /**
      * Similar to the {@code toArray} method, it creates an array from all objects from {@code start}
@@ -67,7 +67,7 @@ public interface DataEngine<E>{
      * @throws EngineUnderflowException Thrown when invoking data engine is empty
      */
     @Behaviour(Type.UNSUPPORTED)
-    default E[] toArray(int start) throws EngineUnderflowException{
+    default E[] toArray(int start){
         return toArray(start, getActiveSize());
     }
 
@@ -81,7 +81,7 @@ public interface DataEngine<E>{
      * @throws EngineUnderflowException Thrown when invoking data engine is empty
      */
     @Behaviour(Type.UNSUPPORTED)
-    default E[] toArray(int start, int end) throws EngineUnderflowException{
+    default E[] toArray(int start, int end){
         throw new UnsupportedOperationException("Unimplemented");
     }
 
@@ -104,7 +104,7 @@ public interface DataEngine<E>{
      * @return Returns true if the invoking data engine has been emptied, false otherwise
      * @throws EngineUnderflowException If the data engine is empty, throws an exception
      */
-    boolean removeAll() throws EngineUnderflowException, ImmutableException;
+    boolean removeAll() throws ImmutableException;
 
     /**
      * Generates an {@code AtomicReference} of the data engine. Useful when the object has to be
@@ -127,7 +127,7 @@ public interface DataEngine<E>{
      * different lengths
      */
     @Behaviour(Type.UNSUPPORTED)
-    default <T extends DataEngine<E>> boolean equals(T de) throws EngineUnderflowException {
+    default <T extends DataEngine<E>> boolean equals(T de){
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
@@ -143,7 +143,7 @@ public interface DataEngine<E>{
      * @throws EngineUnderflowException Thrown when either of them is empty, or range length is invalid
      */
     @Behaviour(Type.UNSUPPORTED)
-    default <T extends DataEngine<E>> boolean equals(T de, int start, int end) throws EngineUnderflowException {
+    default <T extends DataEngine<E>> boolean equals(T de, int start, int end){
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
@@ -155,7 +155,7 @@ public interface DataEngine<E>{
      * @param <T> Subclass of {@code DataEngine}
      */
     @Behaviour(Type.UNSUPPORTED)
-    default <T extends DataEngine<E>> boolean equivalence(T de) throws EngineUnderflowException {
+    default <T extends DataEngine<E>> boolean equivalence(T de){
         throw new UnsupportedOperationException("Unsupported operation");
     }
 }

@@ -4,7 +4,9 @@ import data.constants.ImplementationType;
 import data.core.*;
 import data.constants.Type;
 
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Objects;
 
 
 /**
@@ -23,9 +25,9 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
 
     //Methods that will add items to the list
 
-    public abstract void add(E item) throws EngineOverflowException, ImmutableException;
+    public abstract void add(E item) throws ImmutableException;
 
-    public abstract void add(int index, E item) throws EngineOverflowException, ImmutableException;
+    public abstract void add(int index, E item) throws ImmutableException;
 
     /**
      * Adds all the items present in {@code list} into the invoking data-engine
@@ -37,9 +39,10 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param list The list whose items are to be added into the invoking list
      * @param <T> A subclass of {@code AbstractList}
      * @throws IllegalArgumentException Thrown when the list is empty
+     * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     @Behaviour(Type.MUTABLE)
-    public <T extends AbstractList<E>> void addAll(T list) throws EngineOverflowException, ImmutableException {
+    public <T extends AbstractList<E>> void addAll(T list) throws ImmutableException {
         if(list.getActiveSize() > 0){
             for (E item : list) add(item);
         } else throw new IllegalArgumentException("List is empty");
@@ -55,9 +58,10 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param list The list whose elements are to be added
      * @param start Starting point for adding elements, inclusive
      * @param <T> A subclass of {@code AbstractList}
+     * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     @Behaviour(Type.MUTABLE)
-    public <T extends AbstractList<E>> void addAllFrom(T list, int start) throws EngineOverflowException, ImmutableException {
+    public <T extends AbstractList<E>> void addAllFrom(T list, int start) throws ImmutableException {
         if(start > list.getActiveSize())
             throw new IndexOutOfBoundsException("Passed index exceeds number of items present");
         else if(start < 0)
@@ -84,9 +88,10 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param end End point for adding elements
      * @param <T> A subclass of {@code AbstractList}
      * @throws IndexOutOfBoundsException Thrown when endpoints are invalid
+     * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     @Behaviour(Type.MUTABLE)
-    public <T extends AbstractList<E>> void addAll(T list, int start, int end) throws EngineOverflowException, ImmutableException {
+    public <T extends AbstractList<E>> void addAll(T list, int start, int end) throws ImmutableException {
         if((end - start + 1) > list.getActiveSize())
             throw new IndexOutOfBoundsException("Passed range exceeds number of items present");
         else if(end > list.getActiveSize() | start > list.getActiveSize() |
@@ -97,6 +102,51 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
             for (E item : list){
                 if(blocking++ < start); //Block until start index is reached
                 else if(blocking++ < end) add(item); // Add items until blocking crosses range
+            }
+        }
+    }
+
+    /**
+     * Adds all the items present in the given {@code arr}. Non-null elements are not allowed
+     * @param arr The array to be added
+     * @throws ImmutableException Thrown when it is called on an immutable implementation
+     */
+    public void addAll(E[] arr) throws ImmutableException {
+        addAll(arr, 0, arr.length);
+    }
+
+    /**
+     * Adds all the items present in the given {@code arr} from {@code start}. Non-null elements are not allowed
+     * @param arr The array to be added
+     * @param start The start point for adding elements
+     * @throws ImmutableException Thrown when it is called on an immutable implementation
+     */
+    public void addAll(E[] arr, int start) throws ImmutableException{
+        addAll(arr, start, arr.length);
+    }
+
+    /**
+     * Adds all items present in {@code arr} in the range {@code start} to {@code end} inclusive. All the items
+     * present must be non-null, or an exception will be thrown. It depends on the {@code add} method. For thread-safe
+     * implementations, a more efficient implementation is preferred
+     *
+     * @param arr An array containing non-null items to add
+     * @param start Start point for adding elements
+     * @param end End point for adding elements
+     * @throws ImmutableException Thrown when it is called on an immutable implementation
+     */
+    public void addAll(E[] arr, int start, int end) throws ImmutableException {
+        if(start > end | start < 0 | end < 0 | end > arr.length | start > arr.length)
+            throw new IndexOutOfBoundsException("Provided range is invalid");
+        else if(Arrays.stream(arr).anyMatch(Objects::isNull))
+            throw new NullPointerException("Null elements are not allowed");
+        else if(arr.length == 0)
+            throw new IllegalArgumentException("Array is empty");
+        else{
+            int blocking = 0;
+            while (blocking < end) {
+                blocking++;
+                if (blocking > start) add(arr[blocking]);
             }
         }
     }
@@ -120,8 +170,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @throws EngineUnderflowException Thrown when sizes of both lists are different.
      */
     @Behaviour(Type.IMMUTABLE)
-    public <T extends AbstractList<E>> boolean containsAll(T list)
-            throws EngineUnderflowException{
+    public <T extends AbstractList<E>> boolean containsAll(T list){
         if (list.getActiveSize() == 0 | getActiveSize() == 0)
             throw new EngineUnderflowException("Invalid list, a list cannot be empty");
         else{
@@ -146,7 +195,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @throws IndexOutOfBoundsException Thrown when invalid {@code start} index is passed
      */
     @Behaviour(Type.IMMUTABLE)
-    public <T extends AbstractList<E>> boolean containsAllFrom(T list, int start) throws EngineUnderflowException {
+    public <T extends AbstractList<E>> boolean containsAllFrom(T list, int start){
         if (list.getActiveSize() == 0 | getActiveSize() == 0)
             throw new EngineUnderflowException("Invalid list, a list cannot be empty");
         else if(start > list.getActiveSize() | start < 0)
@@ -197,6 +246,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * Removes the {@code item} if it is present in the list. All possible occurrences are removed
      * @param item The item to bo removed
      * @return Returns true if removed, false otherwise.
+     * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     public abstract boolean remove(E item) throws ImmutableException;
 
@@ -204,12 +254,14 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * Removes the item present at the given index as long as it is not null
      * @param index The position at which an item (if present) is to be removed
      * @return Returns true if an item is removed, false otherwise
+     * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     public abstract boolean removeAt(int index) throws ImmutableException;
 
     /**
      * Clears all the items in the list.
      * @return Returns true if cleared, false otherwise.
+     * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     public abstract boolean clear() throws ImmutableException;
 
@@ -223,9 +275,10 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param list The list whose items are to be checked
      * @param <T> A subclass of {@code AbstractList}
      * @throws EngineUnderflowException Thrown when an empty list is passed
+     * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     @Behaviour(Type.MUTABLE)
-    public <T extends AbstractList<E>> void retainAll(T list) throws EngineUnderflowException, ImmutableException {
+    public <T extends AbstractList<E>> void retainAll(T list) throws ImmutableException {
         if(list.equals(null)) throw new NullPointerException("Null objects are not allowed");
         else if(list.isEmpty()) throw new EngineUnderflowException("List is empty");
         else {
