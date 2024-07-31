@@ -1,12 +1,13 @@
-package engine.list;
+package engine.implementation;
 
 import data.constants.*;
 import data.core.*;
-import engine.core.AbstractList;
+import engine.abstraction.AbstractList;
 
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+
 
 /**
  * A fully dynamic array-list implementation that is not thread-safe. An iterator for this data-engine
@@ -126,12 +127,26 @@ public class DynamicArrayList<E> extends AbstractList<E> {
 
             //Shift all the elements
             setActiveSize(getActiveSize()+1);
-            for (int i = getActiveSize(); i > index; i--)
-                elements[i] = elements[i - 1];
+            System.arraycopy(elements, index, elements, index+1, getActiveSize()-index);
             elements[index] = item;
             incrementModification();
             grow(); //May grow, who knows?
         }
+    }
+
+    /**
+     * Adds all items present in {@code arr} in the range {@code start} to {@code end} inclusive. All the items
+     * present must be non-null, or an exception will be thrown. It depends on the {@code add} method. For thread-safe
+     * implementations, a more efficient implementation is preferred
+     *
+     * @param arr   An array containing non-null items to add
+     * @param start Start point for adding elements
+     * @param end   End point for adding elements
+     * @throws ImmutableException Thrown when it is called on an immutable implementation
+     */
+    @Override
+    public void addAll(E[] arr, int start, int end) throws ImmutableException {
+
     }
 
     /**
@@ -141,11 +156,10 @@ public class DynamicArrayList<E> extends AbstractList<E> {
      * @return Returns true if present, false otherwise
      */
     @Override
-    @SuppressWarnings("unchecked")
     @Behaviour(Type.IMMUTABLE)
     public boolean contains(E item) {
-        for (Object element : elements) {
-            if (((E) element).equals(item)) {
+        for (int i = 0; i < getActiveSize(); i++) {
+            if (elements[i].equals(item)) {
                 return true;
             }
         }
@@ -253,6 +267,19 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     }
 
     /**
+     * Creates a list containing all the elements in the range {@code start} to {@code end}.
+     * Null indices are not allowed
+     *
+     * @param start Starting position
+     * @param end   End position
+     * @return Returns the new list
+     */
+    @Override
+    public AbstractList<E> subList(int start, int end) {
+        return null;
+    }
+
+    /**
      * When invoked on a data engine that implements an underlying array, will shift all the elements
      * to the beginning, i.e. a sparsely populated array can be so adjusted that all the elements
      * get move to the front
@@ -263,9 +290,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
         int currentPos = 0;
         for (int i = 0; i < elements.length; i++)
             if (elements[i] != null) elements[currentPos++] = elements[i];
-
-        for (int i = currentPos; i < elements.length; i++) elements[i] = null;
-    }
+        Arrays.fill(elements, currentPos, getActiveSize()-1, null);    }
 
     /**
      * When the {@code activeSize} is less than {@code SHRINK_LOAD_FACTOR * maxCapacity}, for an
@@ -315,14 +340,11 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @Behaviour(Type.MUTABLE)
     public void reverse() {
         incrementModification();
-        int left = 0, right = this.getActiveSize() - 1;
         Object t;
-        while (left < right) {
+        for(int left = 0, right = this.getActiveSize() - 1;left < right; left++, right--){
             t = elements[right];
             elements[right] = elements[left];
             elements[left] = t;
-            left++;
-            right--;
         }
     }
 
@@ -364,7 +386,6 @@ public class DynamicArrayList<E> extends AbstractList<E> {
      */
     @Override
     @Behaviour(Type.IMMUTABLE)
-    @SuppressWarnings("unchecked")
     public E[] toArray(int start) throws EngineUnderflowException {
         return toArray(start, getActiveSize());
     }
@@ -449,7 +470,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @SuppressWarnings("unchecked")
     public <T extends DataEngine<E>> boolean equals(T list, int start, int end) throws EngineUnderflowException {
         int size = this.getActiveSize();
-        int size1 = this.getActiveSize();
+        int size1 = list.getActiveSize();
         if (!(list instanceof AbstractList<?>))
             throw new IllegalArgumentException("The list passed must be a subclass of AbstractList");
         else if (start > size1 | end > size1 | (end - start + 1) > size1)

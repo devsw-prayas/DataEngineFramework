@@ -20,6 +20,12 @@
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.devsw</groupId>
+            <artifactId>JBenchmark</artifactId>
+            <version>Release-1.0</version>
+        </dependency>
     </dependencies>
 
 </project>

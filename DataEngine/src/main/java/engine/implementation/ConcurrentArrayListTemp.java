@@ -1,9 +1,8 @@
-package engine.list.concurrent;
+package engine.implementation;
 
 import data.constants.*;
 import data.core.*;
-import engine.core.AbstractList;
-import engine.list.DynamicArrayList;
+import engine.abstraction.AbstractList;
 
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;

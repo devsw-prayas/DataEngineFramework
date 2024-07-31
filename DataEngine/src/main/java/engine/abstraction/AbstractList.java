@@ -1,12 +1,10 @@
-package engine.core;
+package engine.abstraction;
 
 import data.constants.ImplementationType;
 import data.core.*;
 import data.constants.Type;
 
-import java.util.Arrays;
 import java.util.Iterator;
-import java.util.Objects;
 
 
 /**
@@ -31,13 +29,13 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
 
     /**
      * Adds all the items present in {@code list} into the invoking data-engine
-     * This method is iterator dependent. Any implementation that is not marked with {@code Implementation}
-     * must be careful to have a concrete {@code Iterator} implementation, else the method will throw an error.
-     * It is highly recommended to use {@code Implementation} to guarantee that an {@code Iterator} will be
+     * This method is iterator dependent. Any implementation that is not marked with {@link Implementation}
+     * must be careful to have a concrete {@link Iterator} implementation, else the method will throw an error.
+     * It is highly recommended to use {@link Implementation} to guarantee that an {@link Iterator} will be
      * present during execution.
      *
      * @param list The list whose items are to be added into the invoking list
-     * @param <T> A subclass of {@code AbstractList}
+     * @param <T> A subclass of {@link AbstractList}
      * @throws IllegalArgumentException Thrown when the list is empty
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
@@ -50,14 +48,14 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
 
     /**
      * Similar to the {@code addAll} method, it adds all the items from the {@code start}th index, inclusive.
-     * This method is iterator dependent. Any implementation that is not marked with {@code Implementation}
-     * must be careful to have a concrete {@code Iterator} implementation, else the method will throw an error.
-     * It is highly recommended to use {@code Implementation} to guarantee that an {@code Iterator} will be
+     * This method is iterator dependent. Any implementation that is not marked with {@link Implementation}
+     * must be careful to have a concrete {@link Iterator} implementation, else the method will throw an error.
+     * It is highly recommended to use {@link Implementation} to guarantee that an {@link Iterator} will be
      * present during execution.
      *
      * @param list The list whose elements are to be added
      * @param start Starting point for adding elements, inclusive
-     * @param <T> A subclass of {@code AbstractList}
+     * @param <T> A subclass of {@link AbstractList}
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     @Behaviour(Type.MUTABLE)
@@ -78,15 +76,15 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
 
     /**
      *  Adds all the items lying in the range {@code start} to {@code end}. Both endpoints of interval
-     *  are inclusive. This method is iterator dependent. Any implementation that is not marked with {@code Implementation}
-     *  must be careful to have a concrete {@code Iterator} implementation, else the method will throw an error.
-     *  It is highly recommended to use {@code Implementation} to guarantee that an {@code Iterator} will be
+     *  are inclusive. This method is iterator dependent. Any implementation that is not marked with {@link Implementation}
+     *  must be careful to have a concrete {@link Iterator} implementation, else the method will throw an error.
+     *  It is highly recommended to use {@link Implementation} to guarantee that an {@link Iterator} will be
      *  present during execution.
      *
      * @param list The list whose elements are to be added
      * @param start Start point for adding elements
      * @param end End point for adding elements
-     * @param <T> A subclass of {@code AbstractList}
+     * @param <T> A subclass of {@link AbstractList}
      * @throws IndexOutOfBoundsException Thrown when endpoints are invalid
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
@@ -135,21 +133,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param end End point for adding elements
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
-    public void addAll(E[] arr, int start, int end) throws ImmutableException {
-        if(start > end | start < 0 | end < 0 | end > arr.length | start > arr.length)
-            throw new IndexOutOfBoundsException("Provided range is invalid");
-        else if(Arrays.stream(arr).anyMatch(Objects::isNull))
-            throw new NullPointerException("Null elements are not allowed");
-        else if(arr.length == 0)
-            throw new IllegalArgumentException("Array is empty");
-        else{
-            int blocking = 0;
-            while (blocking < end) {
-                blocking++;
-                if (blocking > start) add(arr[blocking]);
-            }
-        }
-    }
+    public abstract void addAll(E[] arr, int start, int end) throws ImmutableException;
 
     /**
      * Checks if an item is present in the invoking list
@@ -160,13 +144,13 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
 
     /**
      * Checks if all the items present in the list are present in the invoking list. This method is iterator dependent.
-     * Any implementation that is not marked with {@code Implementation} must be careful to have a concrete {@code Iterator}
-     * implementation, else the method will throw an error. It is highly recommended to use {@code Implementation} to
-     * guarantee that an {@code Iterator} will be present during execution.
+     * Any implementation that is not marked with {@link Implementation} must be careful to have a concrete {@link Iterator}
+     * implementation, else the method will throw an error. It is highly recommended to use {@link Implementation} to
+     * guarantee that an {@link Iterator} will be present during execution.
      *
      * @param list The list whose items have to be checked for presence in the invoking list
      * @return Returns true if all items are present, false otherwise
-     * @param <T> A subclass of {@code AbstractLiat}
+     * @param <T> A subclass of {@link AbstractList}
      * @throws EngineUnderflowException Thrown when sizes of both lists are different.
      */
     @Behaviour(Type.IMMUTABLE)
@@ -183,9 +167,9 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
 
     /**
      * Checks if all the items present after the {@code start}th index are present in the invoking list. This method is
-     * iterator dependent. Any implementation that is not marked with {@code Implementation} must be careful to have a
-     * concrete {@code Iterator} implementation, else the method will throw an error. It is highly recommended to use
-     * {@code Implementation} to guarantee that an {@code Iterator} will be present during execution.
+     * iterator dependent. Any implementation that is not marked with {@link Implementation} must be careful to have a
+     * concrete {@link  Iterator} implementation, else the method will throw an error. It is highly recommended to use
+     * {@link  Implementation} to guarantee that an {@link  Iterator} will be present during execution.
      *
      * @param list The list whose elements lying the provided range are to be checked
      * @param start Starting point for checking, inclusive
@@ -213,8 +197,8 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
     /**
      * Checks if all the items present in the given list in the range {@code start} to {@code end} inclusive is
      * present in the invoking list. This method is iterator dependent. Any implementation that is not marked with
-     * {@code Implementation} must be careful to have a concrete {@code Iterator} implementation, else the method will
-     * throw an error. It is highly recommended to use {@code Implementation} to guarantee that an {@code Iterator}
+     * {@code Implementation} must be careful to have a concrete {@link Iterator} implementation, else the method will
+     * throw an error. It is highly recommended to use {@link Implementation} to guarantee that an {@link Iterator}
      * will be present during execution.
      *
      * @param list The list whose items are to be checked in the specified range.
@@ -222,7 +206,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param end End point for checks, inclusive.
      * @return Returns true if all the items present in then specified range are present in the
      * invoking list, false otherwise.
-     * @param <T> A subclass of {@code AbstractList}
+     * @param <T> A subclass of {@link AbstractList}
      * @throws IndexOutOfBoundsException Thrown when an invalid range is passed.
      */
     @Behaviour(Type.IMMUTABLE)
@@ -238,7 +222,6 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
                 if(!contains(item) & blocking < end) return false;
             }
         }
-
         return true;
     }
 
@@ -267,13 +250,13 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
 
     /**
      * This method retains all the items that are present in the {@code list} passed as parameter. This method
-     * is iterator dependent. Any implementation that is not marked with {@code Implementation} must be careful
-     * to have a concrete {@code Iterator} implementation, else the method will throw an error. It is highly
-     * recommended to use {@code Implementation} to guarantee that an {@code Iterator} will be present during
+     * is iterator dependent. Any implementation that is not marked with {@link Implementation} must be careful
+     * to have a concrete {@link Iterator} implementation, else the method will throw an error. It is highly
+     * recommended to use {@link Implementation} to guarantee that an {@link Iterator} will be present during
      * execution.
      *
      * @param list The list whose items are to be checked
-     * @param <T> A subclass of {@code AbstractList}
+     * @param <T> A subclass of {@link AbstractList}
      * @throws EngineUnderflowException Thrown when an empty list is passed
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
@@ -314,4 +297,22 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @return Returns the item present at the given index.
      */
     public abstract E get(int index);
+
+    /**
+     * Creates a list containing all the elements in the range {@code start} to {@code end}.
+     * Null indices are not allowed
+     * @param start Starting position
+     * @param end End position
+     * @return Returns the new list
+     */
+    public abstract AbstractList<E> subList(int start, int end);
+
+    /**
+     * Creates a list containing all the elements in the range {@code start} to {@code getActiveSize()}
+     * @param start Starting position
+     * @return Returns the new list
+     */
+    public AbstractList<E> subList(int start){
+        return subList(start, getActiveSize());
+    }
 }

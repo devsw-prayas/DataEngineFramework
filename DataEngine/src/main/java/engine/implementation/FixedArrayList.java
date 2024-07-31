@@ -1,19 +1,20 @@
-package engine.list;
+package engine.implementation;
 
 import data.constants.*;
 import data.core.*;
-import engine.core.AbstractList;
+import engine.abstraction.AbstractList;
 
 import java.util.Arrays;
 import java.util.ConcurrentModificationException;
 import java.util.Iterator;
+import java.util.Objects;
 
 /**
  * A fixed size array-list implementation that is not thread-safe. An iterator for this data-engine
- * will throw a {@code ConcurrentModificationException} when the list is altered through any means
+ * will throw a {@link ConcurrentModificationException} when the list is altered through any means
  * except the {@code remove} defined by it. Iterator auto-resets. Implementation uses an array of
- * {@code Object}s, to allow a simpler implementation. Null items are not allowed in the list. In
- * case a null object is passed, methods which add to the list will throw {@code NullPointerException}
+ * {@link Object}s, to allow a simpler implementation. Null items are not allowed in the list. In
+ * case a null object is passed, methods which add to the list will throw {@link NullPointerException}
  *
  * @param <E> Type of data being stored.
  *
@@ -40,7 +41,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
      * Creates it with all the elements and max capacity equal to the provided {@code list.maxCapacity() +
      * DEFAULT_CAPACITY}
      */
-    public FixedArrayList(AbstractList<E> list) throws EngineOverflowException, ImmutableException {
+    public FixedArrayList(AbstractList<E> list) throws ImmutableException {
         super(list.getMaxCapacity());
         addAll(list);
     }
@@ -50,7 +51,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
      * Creates it with all the elements and max capacity equal to the provided {@code maxCapacity +
      * DEFAULT_CAPACITY}. Throws an exception when {@code maxCapacity < list.getActiveSize()}
      */
-    public FixedArrayList(AbstractList<E> list, int maxCapacity) throws EngineOverflowException, ImmutableException {
+    public FixedArrayList(AbstractList<E> list, int maxCapacity) throws ImmutableException {
         super(maxCapacity);
         if(maxCapacity < list.getActiveSize())
             throw new IndexOutOfBoundsException("Invalid capacity, Not enough space.");
@@ -60,23 +61,30 @@ public class FixedArrayList<E> extends AbstractList<E> {
     /**
      * Constructor to add all the elements of the provided arrays Empty arrays are not allowed.
      * Creates it with all the elements and max capacity equal to the provided {@code array.length +
-     * DEFAULT_CAPACITY}
+     * DEFAULT_CAPACITY} Null elements are not counted but extra space is allocated
      */
-    public FixedArrayList(E[] array) throws EngineOverflowException, ImmutableException {
+    public FixedArrayList(E[] array) throws ImmutableException {
         super(array.length + DEFAULT_CAPACITY);
-        for(E item : array) add(item);
+        elements = new Object[getMaxCapacity()];
+        if(array.length == 0) throw new IllegalArgumentException("Array is empty");
+        else{
+            System.arraycopy(Objects.requireNonNull(array), 0, elements, 0, array.length);
+            compress();
+        }
     }
 
     /**
      * Constructor to add all the elements of the provided array. Empty arrays are not allowed.
      * Creates it with all the elements and max capacity equal to the provided {@code array.length +
      * maxCapacity}. Throws an exception when {@code maxCapacity < list.getActiveSize()}
+     * If an exception is thrown then the array elements are not added
      */
-    public FixedArrayList(E[] array, int maxCapacity) throws EngineOverflowException, ImmutableException {
+    public FixedArrayList(E[] array, int maxCapacity){
         super(maxCapacity);
-        if(maxCapacity < array.length)
-            throw new IndexOutOfBoundsException("Invalid capacity, not enough space");
-        else for(E item : array) this.add(item);
+        elements = new Object[maxCapacity];
+        if(maxCapacity < array.length) throw new IndexOutOfBoundsException("Invalid capacity, not enough space");
+        else System.arraycopy(Objects.requireNonNull(array), 0, elements, 0, array.length);
+
     }
 
     //This a non-concurrent implementation, no need of volatile
@@ -92,8 +100,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
         int insertPos = 0;
         for (int i = 0; i < getActiveSize(); i++)
             if(elements[i] != null) elements[insertPos++] = elements[i];
-
-        for (int i = insertPos; i < getActiveSize(); i++) elements[i] = null;
+        Arrays.fill(elements, insertPos, getActiveSize()-1, null);
     }
 
     //Fixed length implementations, can't grow or shrink
@@ -135,11 +142,10 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Behaviour(Type.MUTABLE)
     @Override
     public void add(E item) throws EngineOverflowException, ImmutableException {
-        if(item == null) throw new NullPointerException("Item is null");
         if(this.getActiveSize() == this.getMaxCapacity()) {
             throw new EngineOverflowException("Engine Overflow");
         }else{
-            this.elements[getActiveSize()] = item;
+            this.elements[getActiveSize()] = Objects.requireNonNull(item);
             setActiveSize(getActiveSize()+1);
             incrementModification();
         }
@@ -154,19 +160,34 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Behaviour(Type.MUTABLE)
     @Override
     public void add(int index, E item) throws EngineOverflowException, ImmutableException {
-        if(item == null) throw new NullPointerException("Item is null");
-        else if(this.getActiveSize() == this.getMaxCapacity()) {
+        if(this.getActiveSize() == this.getMaxCapacity()) {
             throw new EngineOverflowException("Engine Overflow");
         }else if(index < 0 | index > this.getActiveSize()) {
             throw new IndexOutOfBoundsException("Index out of bounds");
         }else{
             //Shift all elements and add
             setActiveSize(getActiveSize() +1);
-            for(int i = getActiveSize(); i > index; i--)
-                elements[i] = elements[i-1];
-            elements[index] = item;
+            System.arraycopy(elements, index, elements, index+1, getActiveSize()-index);
+            elements[index] = Objects.requireNonNull(item);
             incrementModification();
         }
+    }
+
+    /**
+     * Adds all items present in {@code arr} in the range {@code start} to {@code end} inclusive. All the items
+     * present must be non-null.
+     *
+     * @param arr   An array containing non-null items to add
+     * @param start Start point for adding elements
+     * @param end   End point for adding elements
+     */
+    @Override
+    public void addAll(E[] arr, int start, int end) {
+        if(start < 0 | end < 0 | end < start)
+            throw new IllegalArgumentException("Invalid range passed");
+        else if(end - start > arr.length | end - start > arr.length + getMaxCapacity())
+            throw new EngineOverflowException("Not enough space");
+        else System.arraycopy(Objects.requireNonNull(arr), start, elements, getActiveSize(), end - start);
     }
 
     //Not an efficient implementation, useful only for single-threaded behaviour
@@ -179,11 +200,8 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Behaviour(Type.IMMUTABLE)
     @Override
     public boolean contains(E item) {
-        for(Object element : elements){
-            if(element.equals(item)){
-                return true;
-            }
-        }
+        for (int i = 0; i < getActiveSize(); i++)
+            if (elements[i].equals(Objects.requireNonNull(item))) return true;
         return false;
     }
 
@@ -195,6 +213,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Behaviour(Type.MUTABLE)
     @Override
     public boolean remove(E item) throws ImmutableException {
+        Objects.requireNonNull(item);
         //This removes all occurrences of item
         if (!contains(item)) return false;
         else {
@@ -243,6 +262,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     public int getFirstIndexOf(E item) {
+        Objects.requireNonNull(item);
         for(int i = 0; i < getActiveSize(); i++) if (elements[i].equals(item)) return i;
         return -1;
     }
@@ -250,6 +270,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     public int getLastIndexOf(E item) {
+        Objects.requireNonNull(item);
         for(int i = getActiveSize() -1; i > 0; i--) if (elements[i].equals(item)) return i;
         return -1;
     }
@@ -269,28 +290,27 @@ public class FixedArrayList<E> extends AbstractList<E> {
     }
 
     /**
+     * Creates a list containing all the elements in the range {@code start} to {@code end}.
+     * Null indices are not allowed
+     *
+     * @param start Starting position
+     * @param end   End position
+     * @return Returns the new list
+     */
+    @Override
+    @SuppressWarnings("unchecked")
+    public AbstractList<E> subList(int start, int end) {
+        return new FixedArrayList<E>((E[])this.elements, end-start);
+    }
+
+    /**
      * Generates a new array that contains all the non-null items of the list
      * @return Returns the array containing all the non-null items
      * @throws EngineUnderflowException Thrown when list is empty
      */
     @Override
-    @SuppressWarnings("unchecked")
-    @Behaviour(Type.IMMUTABLE)
     public E[] toArray() throws EngineUnderflowException {
-        if (elements.length == 0) throw new EngineUnderflowException("List is empty");
-
-        // Count non-null elements
-        int count = 0;
-        for (Object element : elements) if (element != null) count++;
-        if (count == 0) throw new EngineUnderflowException("List is empty");
-
-        // Create array of exact size
-        E[] copy = (E[]) new Object[count];
-
-        // Copy non-null elements
-        int pos = 0;
-        for (Object element : elements) if (element != null) copy[pos++] = (E) element;
-        return copy;
+        return toArray(0, getActiveSize());
     }
 
     /**
@@ -348,10 +368,9 @@ public class FixedArrayList<E> extends AbstractList<E> {
         if(this.getActiveSize() == 0) throw new EngineUnderflowException("list is empty");
         else if (end < start | end > this.getActiveSize() | start > this.getActiveSize() | end < 0 | start < 0)
             throw new IndexOutOfBoundsException("Invalid subarray range");
-        E[] copy = (E[]) new Object[end-start];
-        for (int i = start-1; i < end; i++)
-            copy[i- start +1] = this.get(i);
-        return Arrays.copyOf(copy, end - start);
+        Object[] copy = new Object[end-start];
+        System.arraycopy(elements, start, copy, 0, end - start);
+        return (E[])copy;
     }
 
     /**
@@ -388,7 +407,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
      * @param start The starting position, inclusive of range
      * @param end The ending position, inclusive of range
      * @return Returns true the range is equal, false otherwise
-     * @param <T> A subclass of {@code AbstractList}
+     * @param <T> A subclass of {@link AbstractList}
      */
     @Override
     @SuppressWarnings("unchecked")
@@ -426,7 +445,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
      *
      * @param list The list whose equivalence is to be checked
      * @return Returns true if both are equivalent, false otherwise
-     * @param <T> A subclass of {@code AbstractList}
+     * @param <T> A subclass of {@link AbstractList}
      * @throws EngineUnderflowException Thrown when an empty list
      */
     @Override
@@ -463,10 +482,9 @@ public class FixedArrayList<E> extends AbstractList<E> {
             //Generate another copy
             E[] copy2 = this.toArray();
             //Now generate a new one
-            //This method might be inefficient!
             FixedArrayList<E> temp = new FixedArrayList<>(copy1);
             //Now inject the rest
-            for (E item : copy2) temp.add(item);
+            System.arraycopy(copy2, 0, temp.elements, temp.getActiveSize(), copy2.length);
             return (T) (new FixedArrayList<>(temp, this.getMaxCapacity() + list.getMaxCapacity()));
         }
     }
@@ -499,8 +517,8 @@ public class FixedArrayList<E> extends AbstractList<E> {
     }
 
     /**
-     * A concrete implementation of {@code Iterator} for {@code FixedArrayList}. Uses a fail-fast
-     * mechanism similar to the {@code Collections Framework}. Will throw {@code ConcurrentModificationException}
+     * A concrete implementation of {@link Iterator} for {@link FixedArrayList}. Uses a fail-fast
+     * mechanism similar to the {@code Collections Framework}. Will throw {@link ConcurrentModificationException}
      * when alteration occurs while accessing an iterator. The iterator will self reset/
      */
     public final class FixedArrayListIterator implements Iterator<E> {
