@@ -305,14 +305,14 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param end End position
      * @return Returns the new list
      */
-    public abstract AbstractList<E> subList(int start, int end);
+    public abstract AbstractList<E> subList(int start, int end) throws ImmutableException;
 
     /**
      * Creates a list containing all the elements in the range {@code start} to {@code getActiveSize()}
      * @param start Starting position
      * @return Returns the new list
      */
-    public AbstractList<E> subList(int start){
+    public AbstractList<E> subList(int start) throws ImmutableException {
         return subList(start, getActiveSize());
     }
 }

@@ -1,8 +1,5 @@
-D:\StormWeaver\DataEngineFramework\DataEngine\src\main\java\engine\core\AbstractList.java
-D:\StormWeaver\DataEngineFramework\DataEngine\src\main\java\engine\core\DataEngines.java
-D:\StormWeaver\DataEngineFramework\DataEngine\src\main\java\engine\list\concurrent\ConcurrentArrayList.java
-D:\StormWeaver\DataEngineFramework\DataEngine\src\main\java\engine\list\concurrent\ConcurrentArrayListTemp.java
-D:\StormWeaver\DataEngineFramework\DataEngine\src\main\java\engine\list\DynamicArrayList.java
-D:\StormWeaver\DataEngineFramework\DataEngine\src\main\java\engine\list\FixedArrayList.java
-D:\StormWeaver\DataEngineFramework\DataEngine\src\main\java\engine\list\ImmutableList.java
-D:\StormWeaver\DataEngineFramework\DataEngine\src\main\java\engine\list\package-info.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngine\src\main\java\engine\abstraction\AbstractList.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngine\src\main\java\engine\implementation\ConcurrentArrayList.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngine\src\main\java\engine\implementation\DataEngines.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngine\src\main\java\engine\implementation\DynamicArrayList.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngine\src\main\java\engine\implementation\FixedArrayList.java

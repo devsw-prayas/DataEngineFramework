@@ -116,7 +116,8 @@ public class ImplementationProcessor extends AbstractProcessor {
         for (Element enclosedElement : element.getEnclosedElements()) {
             if (enclosedElement.getKind().isClass() & !element.getModifiers().contains(Modifier.ABSTRACT)) {
                 for (TypeMirror inf : ((TypeElement)enclosedElement).getInterfaces()) {
-                    if (typeUtils.asElement(inf).toString().equals(Iterator.class.getCanonicalName()))
+                    if (typeUtils.asElement(inf).toString().equals(Iterator.class.getCanonicalName()) ||
+                    subInterface((TypeElement) typeUtils.asElement(inf)))
                         return true;
                 }
             }
@@ -129,5 +130,15 @@ public class ImplementationProcessor extends AbstractProcessor {
      */
     private void injectError(String message, Element element) {
         messager.printMessage(Kind.ERROR, message, element);
+    }
+
+    private boolean subInterface(TypeElement element) {
+        TypeMirror superInterface = element.getSuperclass();
+        while(superInterface.getKind() != TypeKind.NONE){
+            if(typeUtils.asElement(superInterface).toString().equals(Iterator.class.getCanonicalName())){
+                return true;
+            }
+        }
+        return false;
     }
 }

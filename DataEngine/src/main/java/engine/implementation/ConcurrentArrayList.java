@@ -5,9 +5,7 @@ import data.core.*;
 import engine.abstraction.AbstractList;
 
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -15,14 +13,25 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
+ * A high performance implementation of a fully thread-safe dynamic array-list. {@code ConcurrentArrayList}
+ * uses {@link ReentrantReadWriteLock}s upon segmented arrays each having a length {@code partition} long.
+ * The individual stripes are managed by an internal private class {@link LockedStripes} which takes care of
+ * operations that span across a single-stripe. The list itself carefully manages these operations and
+ * makes them span across multiple stripes without various side effects. Though slower than a regular
+ * non-thread safe implementation, it is preferred due to its safe operations in highly contented situations
+ * involving multiple threads. Certain methods act on the entire the internal doubly linked list and any
+ * other methods when called during batching will simply return.
+ * <p>
+ * It is necessary that {@link #isBatching()} is called to check before performing any modifications
  *
- * @param <E>
+ * @param <E> Type argument of stored data
+ * @author Devsw
  */
 @Implementation(ImplementationType.IMPLEMENTATION)
 @EngineNature(nature = Nature.THREAD_MUTABLE, behaviour =  EngineBehaviour.DYNAMIC, order = Ordering.UNSORTED)
 public class ConcurrentArrayList<E> extends AbstractList<E> {
 
-    private final LockedStripes lockedStripe;
+    private LockedStripes lockedStripe;
     private final long partition;
 
     //Internal buffer that fills up and flushes into the array to reduce lock contention.
@@ -37,6 +46,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
 
     private double reductionFactor = 1.0;
 
+    private boolean isBatching = false; //Important when batched operations are occurring
 
     private final AtomicInteger modCount;
 
@@ -188,7 +198,6 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
             setActiveSize(0);
             throw new IndexOutOfBoundsException("Invalid capacity, not enough space");
         } else for(E item : array) this.add(item);
-
     }
 
     /**
@@ -196,6 +205,14 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
      */
     private double load(){
         return (double) getActiveSize() / getMaxCapacity();
+    }
+
+    /**
+     * This method must be called to check if batched operations or global operations are occurring on
+     * a separate thread. It is to make sure data is consistent during batched operations
+     */
+    public boolean isBatching(){
+        return isBatching;
     }
 
     /**
@@ -207,6 +224,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
         while (lastStripe.next != null) lastStripe = lastStripe.next;
         //Now start adding
         recursiveFill(lastStripe, activeBufferCapacity);
+        modify();
     }
 
     /**
@@ -246,6 +264,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
     protected void compress() {
         //Runs the recursive form
         shift(lockedStripe, lockedStripe.next);
+        modify();
     }
 
     /**
@@ -327,6 +346,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
             recursiveGrow(lastStripe, diff);
         }
         setMaxCapacity(newMaxCapacity);
+        modify();
     }
 
     /**
@@ -407,6 +427,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
                 }
             }
         }while (removed != 0);
+        modify();
     }
 
     /**
@@ -436,6 +457,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
             currentStripe.getWriteLock().unlock();
             grow(); //Grow if possible
         }
+        modify();
     }
 
     /**
@@ -495,6 +517,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
             }
             grow();
         }
+        modify();
     }
 
     /**
@@ -610,6 +633,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
                 }
             } finally {
                 lastStripe.getWriteLock().unlock();
+                modify();
             }
             //Now if the stripe is filled to up
             if(lastStripe.activeCapacity == partition && pos < end)
@@ -658,6 +682,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
                     }
                 } finally {
                     lastStripe.getWriteLock().unlock();
+                    modify();
                 }
                 //Now if the stripe is filled to up
                 if(lastStripe.activeCapacity == partition && pos < end)
@@ -763,6 +788,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
             }
         }finally {
             currStripe.getWriteLock().unlock();
+            modify();
         }
         if(changes > 0){
             compress();
@@ -779,7 +805,26 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.MUTABLE)
     public boolean removeAt(int index) {
-        return false;
+        if(index > getActiveSize() || index < 0) return false;
+        else {
+            int pos = 0, stripe = 0;
+            LockedStripes currentStripe = lockedStripe;
+            while(index > pos){
+                pos+= currentStripe.activeCapacity;
+                currentStripe = currentStripe.next;
+                stripe++;
+            }
+            //Now at the required point
+            try{
+                currentStripe.getWriteLock().lock();
+                currentStripe.elements[(int) (index - stripe * partition)] = null;
+            }finally {
+                currentStripe.getWriteLock().unlock();
+                compress();
+                modify();
+            }
+            return true;
+        }
     }
 
     /**
@@ -795,18 +840,28 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
 
     /**
      * This method retains all the items that are present in the {@code list} passed as parameter. This method
-     * is iterator dependent. Any implementation that is not marked with {@link Implementation} must be careful
-     * to have a concrete {@link Iterator} implementation, else the method will throw an error. It is highly
-     * recommended to use {@link Implementation} to guarantee that an {@link Iterator} will be present during
-     * execution.
+     * does not depend on iterators. Instead, it acts directly on the stripes, letting other methods like
+     * {@link #remove} and {@link #contains} do the magic
      *
      * @param list The list whose items are to be checked
-     * @throws EngineUnderflowException Thrown when an empty list is passed
      */
     @Override
     @Behaviour(Type.MUTABLE)
-    public <T extends AbstractList<E>> void retainAll(T list) throws ImmutableException {
-        super.retainAll(list);
+    @SuppressWarnings("unchecked")
+    public <T extends AbstractList<E>> void retainAll(T list) {
+        LockedStripes currentStripe = lockedStripe;
+        while(currentStripe.next != null){
+            try{
+                currentStripe.getReadLock().lock();
+                //Check
+                for(Object item : currentStripe.elements)
+                    if(!list.contains((E) item)) remove((E) item);
+            }finally {
+                currentStripe.getReadLock().unlock();
+                currentStripe = currentStripe.next;
+            }
+        }
+        modify();
     }
 
     /**
@@ -849,7 +904,25 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     public int getLastIndexOf(E item) {
-        return 0;
+        int index = -1;
+        if(item == null) throw new NullPointerException("Item passed is null");
+        else if(!contains(item)) return index;
+        LockedStripes currentStripe = lockedStripe;
+        while(currentStripe.next != null) currentStripe = currentStripe.next;
+        //Now we simply initialize
+        index = getActiveSize();
+        outer : while(currentStripe.previous != null){
+            try{
+                currentStripe.getReadLock().lock();
+                for(int i = currentStripe.activeCapacity-1; i >= 0; i--) {
+                    index--;
+                    if (currentStripe.elements[i].equals(item)) break outer;
+                }
+            }finally {
+                currentStripe.getReadLock().unlock();
+            }
+        }
+        return index;
     }
 
     /**
@@ -860,8 +933,47 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
      */
     @Override
     @Behaviour(Type.IMMUTABLE)
+    @SuppressWarnings("unchecked")
     public E get(int index) {
-        return null;
+        if(index > getActiveSize() || index < 0)
+            throw new IndexOutOfBoundsException("Index out of bounds");
+        int pos = 0;
+        LockedStripes currentStripe = lockedStripe;
+        while(index > pos){
+            currentStripe = currentStripe.next;
+            pos+= currentStripe.activeCapacity;
+        }
+        //We are at the required stripe actually
+        try{
+            currentStripe.getReadLock().lock();
+            int val = pos - index, relativePos = currentStripe.activeCapacity - val;
+            return (E) currentStripe.elements[val];
+        }finally{
+            currentStripe.getReadLock().unlock();
+        }
+    }
+
+    /**
+     * Creates a list containing all the elements in the range {@code start} to {@code end}.
+     * Null indices are not allowed
+     *
+     * @param start Starting position
+     * @param end   End position
+     * @return Returns the new list
+     */
+    @Override
+    public AbstractList<E> subList(int start, int end) throws ImmutableException {
+        if(start > end | start < 0 | end < 0)
+            throw new IndexOutOfBoundsException("Invalid range parameters");
+        AbstractList<E> list = new ConcurrentArrayList<>();
+        int blocked = 0;
+        for (E e : this) {
+            if(blocked >= start && blocked <= end) {
+                list.add(e);
+                blocked++;
+            }
+        }
+        return list;
     }
 
 
@@ -880,14 +992,17 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
     }
 
     /**
-     * The method reverses the invoking data engine when implemented.
-     *
+     * This implementation of reverse is a bit different from non-thread safe implementations. This is due to
+     * the striped nature of the underlying array. Each individual stripe reversed and the linked list is simply
+     * rearranged
      */
     @Override
     @Behaviour(Type.MUTABLE)
     public void reverse() {
+        if(isBatching()) return; //Don't want the thread to be blocked
+        isBatching = true;
         if(getActiveSize() == 0){
-            //Don't do anything.
+            return;
         }else if(lockedStripe.next == null) //A single stripe
             lockedStripe.reverse();
         else{
@@ -900,12 +1015,56 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
                 temp.getWriteLock().lock();
                 lockedStripe.getReadLock().lock();
                 System.arraycopy(lockedStripe.elements, 0, temp.elements, 0, lockedStripe.activeCapacity);
-                //Now we add the stripe to
+                //Now we add the stripe to the front
+                lockedStripe.previous = temp;
+                temp.next = lockedStripe;
             }finally {
                 lockedStripe.getReadLock().unlock();
                 temp.getWriteLock().unlock();
             }
+            int shift = lastStripe.activeCapacity;
+            //Here we have to simply shift elements from the beginning towards the new stripe so that the last
+            //stripe becomes obsolete. We operate on two stripes at once
+            temp = lockedStripe;
+            while(temp.next != null){
+                try{
+                    temp.getWriteLock().lock();
+                    temp.next.getReadLock().lock();
+                    //First shift current stripe
+                    System.arraycopy(temp.elements, shift, temp.elements, 0, (int) (partition -shift));
+                    //Now shift from the next
+                    System.arraycopy(temp.next.elements, 0, temp.elements,
+                            (int) (partition -shift), shift);
+                    temp = temp.next;
+                }finally {
+                    temp.getWriteLock().unlock();
+                    temp.next.getReadLock().unlock();
+                }
+            }
+
+            //Now rearrange stripes
+            lastStripe = lockedStripe;
+            while(lastStripe.next.next != null) lastStripe = lastStripe.next; //Get to the last
+            lastStripe.next = null;
+            lockedStripe = lockedStripe.previous; //Adjust the stripes
+
+            //Now reverse it
+            lastStripe = lockedStripe;
+            temp = null;
+            while(lastStripe != null){
+                temp = lastStripe.previous;
+                lastStripe.previous = lastStripe.next;
+                lastStripe.next = temp;
+
+                lastStripe = lastStripe.previous;
+            }
+
+            if(temp != null){
+                lockedStripe = temp.previous;
+            }
         }
+        isBatching = false;
+        modify();
     }
 
     /**
@@ -1029,15 +1188,28 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
         return (E[]) array;
     }
 
-
     /**
-     * @return Returns true if the invoking data engine has been emptied, false otherwise
-     * @throws EngineUnderflowException If the data engine is empty, throws an exception
+     * @return Returns true if the invoking list has been emptied, false otherwise
+     * @throws EngineUnderflowException If the  is empty, throws an exception
      */
     @Override
     @Behaviour(Type.MUTABLE)
     public boolean removeAll(){
-        return false;
+        if(!isBufferFlushed.get()) flushBuffer();
+        if(getActiveSize() == 0) return true;
+        //Now start from last stripe, and clear each stripe
+        LockedStripes finalStripe = lockedStripe;
+        while (finalStripe.next != null) finalStripe = finalStripe.next;
+        //Now go in reverse
+        LockedStripes temp;
+        while(finalStripe.previous != null){
+            finalStripe.next = null;
+            temp = finalStripe.previous;
+            finalStripe.previous = null;
+            finalStripe = temp;
+        }
+        modify();
+        return true;
     }
 
     /**
@@ -1051,7 +1223,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     public <T extends DataEngine<E>> boolean equals(T list){
-        return super.equals(list);
+        return equals(list, 0 , list.getActiveSize());
     }
 
     /**
@@ -1090,8 +1262,13 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
      */
     @Override
     @Behaviour(Type.IMMUTABLE)
+    @SuppressWarnings("unchecked")
     public <T extends DataEngine<E>> boolean equivalence(T list){
-        return super.equivalence(list);
+        if(!(list instanceof AbstractList))
+            throw new IllegalArgumentException("The list passed must be a subclass of AbstractList");
+        if(list.isEmpty())
+            throw new IllegalArgumentException("The list passed cannot be empty");
+        return this.containsAll((AbstractList<E>)list);
     }
 
     @Override
@@ -1102,7 +1279,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
 
     @Behaviour(Type.MUTABLE)
     public Iterator<E> concurrentIterator(){
-        return null;
+        return new ConcurrentIterator();
     }
 
     /**
@@ -1138,7 +1315,6 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
         }
     }
 
-    //TODO
     /**
      * A more advanced {@link Iterator} that is hooked directly into the actual list. Due to its concurrent nature
      * it is useful when direct access to the list is necessary. Methods can throw {@link java.util.ConcurrentModificationException}
@@ -1148,19 +1324,51 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
      * @author devsw
      */
     public class ConcurrentIterator implements Iterator<E>{
-        @Override
-        public boolean hasNext() {
-            return false;
+        private LockedStripes activeStripe;
+        private int stripeIdx, actualIdx;
+        private int currCount;
+
+        public ConcurrentIterator(){
+            activeStripe = lockedStripe;
+            actualIdx = 0;
+            stripeIdx = 0;
+            currCount = modCount.get();
         }
 
         @Override
+        public boolean hasNext() {
+            if(currCount != modCount.get()) throw new ConcurrentModificationException("Internal array" +
+                    "modified");
+            return actualIdx < getActiveSize();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
         public E next() {
-            return null;
+            if(currCount != modCount.get()) throw new ConcurrentModificationException("Internal array " +
+                    "modified");
+            if(!hasNext()) throw new NoSuchElementException("No more items present");
+            E item;
+            int relative = actualIdx - (int) (stripeIdx * partition);
+            try{
+                activeStripe.getReadLock().lock();
+                item = (E) activeStripe.elements[relative];
+            }finally {
+                activeStripe.getReadLock().unlock();
+            }
+            actualIdx++;
+            //Now if possible, shift to next stripe
+            if(relative+1 > activeStripe.activeCapacity){
+                activeStripe = activeStripe.next;
+                stripeIdx++;
+            }
+            return item;
         }
 
         @Override
         public void remove() {
-            Iterator.super.remove();
+            removeAt(actualIdx);
+            currCount++;
         }
     }
 
