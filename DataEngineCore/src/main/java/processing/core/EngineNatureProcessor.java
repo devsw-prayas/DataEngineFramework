@@ -38,7 +38,7 @@ import com.sun.source.util.Trees;
  * @author devsw
  */
 @SupportedAnnotationTypes("data.core.EngineNature")
-@SupportedSourceVersion(SourceVersion.RELEASE_17)
+@SupportedSourceVersion(SourceVersion.RELEASE_16)
 public class EngineNatureProcessor extends AbstractProcessor {
 
     private Messager messager;
@@ -141,7 +141,7 @@ public class EngineNatureProcessor extends AbstractProcessor {
                 if (meth.toString().equals(method.toString())) {
                     //Check params and modifiers
                     MethodTree methTree = (MethodTree) trees.getTree(meth);
-                    MethodTree methodTree = (MethodTree) trees.getTree(method);
+                    MethodTree methodTree = trees.getTree(method);
 
                     BlockTree body = methTree.getBody();
                     List<? extends StatementTree> statements = body.getStatements();
@@ -165,7 +165,7 @@ public class EngineNatureProcessor extends AbstractProcessor {
     }
 
     /**
-     * Internal helper method, verifies if the implementation is valid for additional bytecode generation
+     * Internal helper method, verifies if the implementation is valid for further checking
      */
     private boolean isValid(Element element) {
         if(element.getAnnotation(EngineNature.class).nature() == Nature.IMMUTABLE){

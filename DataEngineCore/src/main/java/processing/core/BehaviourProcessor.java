@@ -16,7 +16,7 @@ import java.util.Set;
  * Very simple processor for checking valid use of {@code Behaviour}on methods.
  */
 @SupportedAnnotationTypes("data.core.Behaviour")
-@SupportedSourceVersion(SourceVersion.RELEASE_17)
+@SupportedSourceVersion(SourceVersion.RELEASE_16)
 public class BehaviourProcessor extends AbstractProcessor {
 
     private Messager messager;

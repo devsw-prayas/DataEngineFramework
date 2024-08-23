@@ -28,7 +28,7 @@ import data.core.Implementation;
  * Verifies if an implementation is set up perfectly depending on the para
  */
 @SupportedAnnotationTypes("data.core.Implementation")
-@SupportedSourceVersion(value = SourceVersion.RELEASE_17)
+@SupportedSourceVersion(value = SourceVersion.RELEASE_16)
 public class ImplementationProcessor extends AbstractProcessor {
 
     private Messager messager;

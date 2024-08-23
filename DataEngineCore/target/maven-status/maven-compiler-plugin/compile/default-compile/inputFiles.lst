@@ -12,6 +12,15 @@ C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\
 C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\core\Hidden.java
 C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\core\ImmutableException.java
 C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\core\Implementation.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\function\BiConsumer.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\function\BiFunction.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\function\BinaryOperator.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\function\BiPredicate.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\function\Consumer.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\function\Function.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\function\Predicate.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\function\Supplier.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\function\UnaryOperator.java
 C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\pipeline\DataPipeline.java
 C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\processing\core\BehaviourProcessor.java
 C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\processing\core\EngineNatureProcessor.java

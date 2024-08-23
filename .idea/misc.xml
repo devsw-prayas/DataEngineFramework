@@ -20,6 +20,7 @@
         <option value="$PROJECT_DIR$/DataEngine/DataEngineCore/pom.xml" />
         <option value="$PROJECT_DIR$/DataEngineCore/DataEngine/pom.xml" />
         <option value="$PROJECT_DIR$/Logger/pom.xml" />
+        <option value="$PROJECT_DIR$/Testing/pom.xml" />
       </set>
     </option>
   </component>

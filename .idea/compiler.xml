@@ -7,7 +7,6 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="DataEngineCore" />
-        <module name="Testing" />
       </profile>
       <profile name="Annotation profile for DataEngine" enabled="true">
         <sourceOutputDir name="target/generated-sources/annotations" />
@@ -21,6 +20,7 @@
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="Logger" target="17" />
+      <module name="Testing" target="16" />
     </bytecodeTargetLevel>
   </component>
 </project>
