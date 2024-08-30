@@ -2,6 +2,8 @@ package engine.implementation;
 
 import data.constants.*;
 import data.core.*;
+import data.core.ListIterator;
+import data.function.UnaryOperator;
 import engine.abstraction.AbstractList;
 
 
@@ -198,13 +200,6 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
             setActiveSize(0);
             throw new IndexOutOfBoundsException("Invalid capacity, not enough space");
         } else for(E item : array) this.add(item);
-    }
-
-    /**
-     * Gets the active load on the list
-     */
-    private double load(){
-        return (double) getActiveSize() / getMaxCapacity();
     }
 
     /**
@@ -954,6 +949,35 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
     }
 
     /**
+     * Sets the item at given {@code idx} (assuming it to be valid) to the given {@code index}
+     *
+     * @param idx  The position where the item is to be changed
+     * @param item The item
+     */
+    @Override
+    @Behaviour(Type.MUTABLE)
+    public void set(int idx, E item) {
+        if(idx > getActiveSize() || idx < 0)
+            throw new IndexOutOfBoundsException("Index out of bounds");
+        //Now get the stripe containing idx
+        LockedStripes currentStripe = lockedStripe;
+        int pos = 0;
+        while(idx > pos){
+            pos+= currentStripe.activeCapacity;
+            currentStripe = currentStripe.next;
+        }
+        //Now subtract and adjust
+        idx -= (--pos) * (int)partition;
+        try {
+            currentStripe.getWriteLock().lock();
+            currentStripe.elements[idx] = item;
+        }finally {
+            currentStripe.getWriteLock().unlock();
+        }
+        modify();
+    }
+
+    /**
      * Creates a list containing all the elements in the range {@code start} to {@code end}.
      * Null indices are not allowed
      *
@@ -974,6 +998,34 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
             }
         }
         return list;
+    }
+
+    /**
+     * Performs the operation defined by {@code operator} on all the items lying in the range {@code start}
+     * to {@code end}. The actual elements in the underlying lock-striped list are modified.
+     * This method may not complete in case any concurrent modifications occur.
+     * @param operator An {@link UnaryOperator} that is applied on all the elements present in the range
+     * @param start Starting index
+     * @param end End index
+     * @throws ImmutableException Thrown when the implementation is immutable.
+     */
+    @Override
+    @Behaviour(Type.MUTABLE)
+    public void replaceAll(UnaryOperator<E> operator, int start, int end) throws ImmutableException {
+        if (isBatching) return;
+        isBatching = true;
+        if(start > end | start < 0 | end < 0)
+            throw new IndexOutOfBoundsException("Invalid range parameters");
+        else if(end > getActiveSize())
+            throw new IndexOutOfBoundsException("Invalid range parameters");
+        int block = 0;
+        ListIterator<E> concurrent = this.concurrentIterator();
+        while(concurrent.hasNext()){
+            if(block > start & block < end)
+                operator.perform(concurrent.next());
+            block++;
+        }
+        isBatching = false;
     }
 
 
@@ -1250,6 +1302,10 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
         else if (start < 0 | end < 0)
             throw new IndexOutOfBoundsException("Invalid index passed");
         else{
+            for (int block = start; block < end; block++){
+                if(!this.get(block).equals(((AbstractList<?>) list).get(block)))
+                    return false;
+            }
             return true;
         }
     }
@@ -1278,7 +1334,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
     }
 
     @Behaviour(Type.MUTABLE)
-    public Iterator<E> concurrentIterator(){
+    public ListIterator<E> concurrentIterator(){
         return new ConcurrentIterator();
     }
 
@@ -1323,7 +1379,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
      *
      * @author devsw
      */
-    public class ConcurrentIterator implements Iterator<E>{
+    public class ConcurrentIterator implements ListIterator<E> {
         private LockedStripes activeStripe;
         private int stripeIdx, actualIdx;
         private int currCount;
@@ -1367,7 +1423,56 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
 
         @Override
         public void remove() {
+            if(currCount != modCount.get()) throw new ConcurrentModificationException("Internal array" +
+                    "modified");
             removeAt(actualIdx);
+            currCount++;
+        }
+
+        /**
+         * Checks if an item is present before the current item
+         */
+        @Override
+        public boolean hasPrevious() {
+            if(currCount != modCount.get()) throw new ConcurrentModificationException("Internal array" +
+                    "modified");
+            return actualIdx > 0;
+        }
+
+        /**
+         * Returns the previous item present before the current item
+         */
+        @Override
+        @SuppressWarnings("unchecked")
+        public E previous() {
+            if(currCount != modCount.get()) throw new ConcurrentModificationException("Internal array " +
+                    "modified");
+            if(!hasPrevious()) throw new NoSuchElementException("No more items present");
+            E item;
+            int relative = actualIdx - (int) (stripeIdx * partition);
+            try{
+                activeStripe.getReadLock().lock();
+                item = (E) activeStripe.elements[relative];
+            }finally {
+                activeStripe.getReadLock().unlock();
+            }
+            actualIdx--;
+            //Now if possible, shift to next stripe
+            if(relative-1 < 0){
+                activeStripe = activeStripe.previous;
+                stripeIdx--;
+            }
+            return item;
+        }
+
+        /**
+         * Sets the current item to the given {@code item}
+         */
+        @Override
+        public void set(E item) {
+            if(currCount != modCount.get()) throw new ConcurrentModificationException("Internal array" +
+                    "modified");
+            ConcurrentArrayList.this.set(actualIdx, item);
             currCount++;
         }
     }

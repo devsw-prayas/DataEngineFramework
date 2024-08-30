@@ -1,7 +1,7 @@
 package processing.core;
 
-import java.lang.reflect.Method;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.processing.AbstractProcessor;
@@ -19,16 +19,13 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 
-import data.core.AbstractDataEngine;
-import data.core.EngineNature;
-import data.core.Hidden;
-import data.core.Implementation;
+import data.core.*;
 
 /**
  * Verifies if an implementation is set up perfectly depending on the para
  */
 @SupportedAnnotationTypes("data.core.Implementation")
-@SupportedSourceVersion(value = SourceVersion.RELEASE_16)
+@SupportedSourceVersion(value = SourceVersion.RELEASE_17)
 public class ImplementationProcessor extends AbstractProcessor {
 
     private Messager messager;
@@ -116,9 +113,7 @@ public class ImplementationProcessor extends AbstractProcessor {
         for (Element enclosedElement : element.getEnclosedElements()) {
             if (enclosedElement.getKind().isClass() & !element.getModifiers().contains(Modifier.ABSTRACT)) {
                 for (TypeMirror inf : ((TypeElement)enclosedElement).getInterfaces()) {
-                    if (typeUtils.asElement(inf).toString().equals(Iterator.class.getCanonicalName()) ||
-                    subInterface((TypeElement) typeUtils.asElement(inf)))
-                        return true;
+                    if(checkIterator((TypeElement) typeUtils.asElement(inf))) return true;
                 }
             }
         }
@@ -132,13 +127,16 @@ public class ImplementationProcessor extends AbstractProcessor {
         messager.printMessage(Kind.ERROR, message, element);
     }
 
-    private boolean subInterface(TypeElement element) {
-        TypeMirror superInterface = element.getSuperclass();
-        while(superInterface.getKind() != TypeKind.NONE){
-            if(typeUtils.asElement(superInterface).toString().equals(Iterator.class.getCanonicalName())){
-                return true;
-            }
-        }
+    /**
+     * Internal helper method that checks for valid iterators
+     */
+    private boolean checkIterator(TypeElement element) {
+        String[] names = {
+                Iterator.class.getCanonicalName(),
+                ListIterator.class.getCanonicalName()
+        };
+        for(String name : names)
+            if(element.toString().equals(name)) return true;
         return false;
     }
 }

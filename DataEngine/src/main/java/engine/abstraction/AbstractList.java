@@ -3,6 +3,7 @@ package engine.abstraction;
 import data.constants.ImplementationType;
 import data.core.*;
 import data.constants.Type;
+import data.function.UnaryOperator;
 
 import java.util.Iterator;
 
@@ -20,6 +21,20 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
     public AbstractList(int maxCapacity){
         super(maxCapacity);
     }
+
+    /**
+     * Returns the load active on the invoking data-engine
+     */
+    protected double load(){
+        return (getActiveSize() * 1.0 )/ getMaxCapacity();
+    }
+
+    /**
+     * Sets the item at given {@code idx} (assuming it to be valid) to the given {@code index}
+     * @param idx The position where the item is to be changed
+     * @param item The item
+     */
+    public abstract void set(int idx, E item);
 
     //Methods that will add items to the list
 
@@ -312,7 +327,28 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param start Starting position
      * @return Returns the new list
      */
+    @Behaviour(Type.IMMUTABLE)
     public AbstractList<E> subList(int start) throws ImmutableException {
         return subList(start, getActiveSize());
     }
+
+    /**
+     * Modifies and replaces all the items present in the list by passing them into an {@link UnaryOperator}
+     * @param operator An {@link UnaryOperator} that is applied on all the elements in the list.
+     * @throws ImmutableException Thrown when the list is immutable
+     */
+    @Behaviour(Type.MUTABLE)
+    public void replaceAll(UnaryOperator<E> operator) throws ImmutableException{
+        replaceAll(operator, 0, getActiveSize());
+    }
+
+    /**
+     * Performs the operation defined by {@code operator} on all the items lying in the range {@code start}
+     * to {@code end}. The actual elements in the underlying lock-striped list are modified.
+     * @param operator An {@link UnaryOperator} that is applied on all the elements present in the range
+     * @param start Starting index
+     * @param end End index
+     * @throws ImmutableException Thrown when the implementation is immutable.
+     */
+    public abstract void replaceAll(UnaryOperator<E> operator, int start, int end) throws ImmutableException;
 }

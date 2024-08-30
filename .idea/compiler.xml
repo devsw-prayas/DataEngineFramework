@@ -6,6 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="Tests" />
         <module name="DataEngineCore" />
       </profile>
       <profile name="Annotation profile for DataEngine" enabled="true">

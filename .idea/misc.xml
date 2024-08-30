@@ -13,6 +13,7 @@
         <option value="$PROJECT_DIR$/DataEngineBase/pom.xml" />
         <option value="$PROJECT_DIR$/Logger/pom.xml" />
         <option value="$PROJECT_DIR$/Testing/pom.xml" />
+        <option value="$PROJECT_DIR$/Tests/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">

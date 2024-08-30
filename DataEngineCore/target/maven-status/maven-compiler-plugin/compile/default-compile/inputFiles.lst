@@ -12,6 +12,9 @@ C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\
 C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\core\Hidden.java
 C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\core\ImmutableException.java
 C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\core\Implementation.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\core\ListIterator.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\core\RandomAccess.java
+C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\core\Sortable.java
 C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\function\BiConsumer.java
 C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\function\BiFunction.java
 C:\StormWeaver\Development\IntelliJ\DataEngineFramework\DataEngineCore\src\main\java\data\function\BinaryOperator.java

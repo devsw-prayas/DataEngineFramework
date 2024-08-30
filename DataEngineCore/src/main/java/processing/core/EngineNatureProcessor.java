@@ -38,7 +38,7 @@ import com.sun.source.util.Trees;
  * @author devsw
  */
 @SupportedAnnotationTypes("data.core.EngineNature")
-@SupportedSourceVersion(SourceVersion.RELEASE_16)
+@SupportedSourceVersion(SourceVersion.RELEASE_17)
 public class EngineNatureProcessor extends AbstractProcessor {
 
     private Messager messager;

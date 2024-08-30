@@ -2,6 +2,7 @@ package engine.implementation;
 
 import data.constants.*;
 import data.core.*;
+import data.function.UnaryOperator;
 import engine.abstraction.AbstractList;
 
 import java.util.Arrays;
@@ -290,6 +291,20 @@ public class FixedArrayList<E> extends AbstractList<E> {
     }
 
     /**
+     * Sets the item at given {@code idx} (assuming it to be valid) to the given {@code index}
+     *
+     * @param idx  The position where the item is to be changed
+     * @param item The item
+     */
+    @Override
+    public void set(int idx, E item) {
+        if(idx < 0 || idx >= getActiveSize())
+            throw new IndexOutOfBoundsException("Invalid index");
+        elements[idx] = Objects.requireNonNull(item);
+    }
+
+
+    /**
      * Creates a list containing all the elements in the range {@code start} to {@code end}.
      * Null indices are not allowed
      *
@@ -301,6 +316,12 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @SuppressWarnings("unchecked")
     public AbstractList<E> subList(int start, int end) {
         return new FixedArrayList<E>((E[])this.elements, end-start);
+    }
+
+    @Override
+    @Behaviour(Type.MUTABLE)
+    public void replaceAll(UnaryOperator<E> operator, int start, int end) throws ImmutableException {
+
     }
 
     /**
@@ -521,7 +542,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
      * mechanism similar to the {@code Collections Framework}. Will throw {@link ConcurrentModificationException}
      * when alteration occurs while accessing an iterator. The iterator will self reset/
      */
-    public final class FixedArrayListIterator implements Iterator<E> {
+    public final class FixedArrayListIterator implements ListIterator<E> {
 
         private int currModCount;
         int currPos;
@@ -556,6 +577,18 @@ public class FixedArrayList<E> extends AbstractList<E> {
         public E previous(){
             previous = true;
             return (E)connectedList.elements[currPos--];
+        }
+
+        /**
+         * Sets the current item to the given {@code item}
+         */
+        @Override
+        public void set(E item) {
+            if(modCount != currModCount)
+                throw new ConcurrentModificationException("Alteration occurred during iterator access");
+            connectedList.elements[currPos] = item;
+            incrementModification();
+            currModCount++;
         }
 
         @Override

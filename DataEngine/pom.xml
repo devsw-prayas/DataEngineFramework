@@ -28,8 +28,6 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <source>16</source>
-                    <target>16</target>
                     <annotationProcessors>
                         <annotationProcessor>processing.core.BehaviourProcessor</annotationProcessor>
                         <annotationProcessor>processing.core.EngineNatureProcessor</annotationProcessor>
