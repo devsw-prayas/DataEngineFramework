@@ -2,13 +2,12 @@ package engine.implementation;
 
 import data.constants.*;
 import data.core.*;
+import data.core.ListIterator;
+import data.core.RandomAccess;
 import data.function.UnaryOperator;
 import engine.abstraction.AbstractList;
 
-import java.util.Arrays;
-import java.util.ConcurrentModificationException;
-import java.util.Iterator;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * A fixed size array-list implementation that is not thread-safe. An iterator for this data-engine
@@ -24,7 +23,7 @@ import java.util.Objects;
  */
 @Implementation(ImplementationType.IMPLEMENTATION)
 @EngineNature(nature = Nature.MUTABLE, behaviour = EngineBehaviour.FIXED_LENGTH, order = Ordering.UNSORTED)
-public class FixedArrayList<E> extends AbstractList<E> {
+public class FixedArrayList<E> extends AbstractList<E> implements RandomAccess {
 
     public FixedArrayList() {
         super(AbstractDataEngine.DEFAULT_CAPACITY);
@@ -107,14 +106,14 @@ public class FixedArrayList<E> extends AbstractList<E> {
     //Fixed length implementations, can't grow or shrink
     @Override
     @Behaviour(Type.UNSUPPORTED)
-    protected void shrink() throws ImmutableException {
+    protected void shrink() {
         throw new UnsupportedOperationException("Fixed length implementation");
     }
 
     //Like I said, fixed length :)
     @Override
     @Behaviour(Type.UNSUPPORTED)
-    protected void grow() throws ImmutableException {
+    protected void grow() {
         throw new UnsupportedOperationException("Fixed length implementation");
     }
 
@@ -123,7 +122,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
      */
     @Behaviour(Type.MUTABLE)
     @Override
-    public void reverse() throws ImmutableException {
+    public void reverse() {
         incrementModification();
         int left = 0, right = this.getActiveSize() - 1;
         Object t;
@@ -142,7 +141,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
      */
     @Behaviour(Type.MUTABLE)
     @Override
-    public void add(E item) throws EngineOverflowException, ImmutableException {
+    public void add(E item) throws EngineOverflowException {
         if(this.getActiveSize() == this.getMaxCapacity()) {
             throw new EngineOverflowException("Engine Overflow");
         }else{
@@ -160,7 +159,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
      */
     @Behaviour(Type.MUTABLE)
     @Override
-    public void add(int index, E item) throws EngineOverflowException, ImmutableException {
+    public void add(int index, E item) throws EngineOverflowException {
         if(this.getActiveSize() == this.getMaxCapacity()) {
             throw new EngineOverflowException("Engine Overflow");
         }else if(index < 0 | index > this.getActiveSize()) {
@@ -239,8 +238,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Override
     public boolean removeAt(int index) throws ImmutableException {
         if(index > getActiveSize() -1 | index < 0) throw new IndexOutOfBoundsException("Invalid Index");
-        else if(elements[index] == null)
-        return false;
+        else if(elements[index] == null) return false;
         else {
             elements[index] = null;
             incrementModification();
@@ -256,7 +254,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
      */
     @Behaviour(Type.MUTABLE)
     @Override
-    public boolean clear() throws ImmutableException {
+    public boolean clear() {
         return removeAll();
     }
 
@@ -315,13 +313,20 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Override
     @SuppressWarnings("unchecked")
     public AbstractList<E> subList(int start, int end) {
-        return new FixedArrayList<E>((E[])this.elements, end-start);
+        return new FixedArrayList<>((E[])this.elements, end-start);
     }
 
     @Override
     @Behaviour(Type.MUTABLE)
-    public void replaceAll(UnaryOperator<E> operator, int start, int end) throws ImmutableException {
-
+    @SuppressWarnings("unchecked")
+    public void replaceAll(UnaryOperator<E> operator, int start, int end) {
+        Objects.requireNonNull(operator);
+        if(end < 0 | start < 0 | start > end)
+            throw new IndexOutOfBoundsException("Invalid range");
+        if(end > getActiveSize())
+            throw new IndexOutOfBoundsException("Invalid index");
+        for (int i = start; i < end; i++)
+            operator.perform((E) elements[i]);
     }
 
     /**
@@ -340,7 +345,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
      */
     @Behaviour(Type.MUTABLE)
     @Override
-    public boolean removeAll() throws ImmutableException {
+    public boolean removeAll() {
         if(elements == null || getActiveSize() == 0)
             return false;
         else {
@@ -406,7 +411,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     public <T extends DataEngine<E>> boolean equals(T list) throws EngineUnderflowException {
-        if(!(list instanceof AbstractList<?>)) throw new IllegalArgumentException("The provided list " +
+        if(!(Objects.requireNonNull(list) instanceof AbstractList<?>)) throw new IllegalArgumentException("The provided list " +
                 "must be a subclass of AbstractList");
         else if(this.getActiveSize() != list.getActiveSize())
             return false;
@@ -435,7 +440,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Behaviour(Type.IMMUTABLE)
     public <T extends DataEngine<E>> boolean equals(T list, int start, int end) {
         int size = this.getActiveSize();
-        int size1 = this.getActiveSize();
+        int size1 = Objects.requireNonNull(list).getActiveSize();
         if(!(list instanceof AbstractList<?>))
             throw new IllegalArgumentException("The list passed must be a subclass of AbstractList");
         else if(start > size1 | end > size1 | (end- start + 1) > size1)
@@ -473,7 +478,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @SuppressWarnings("unchecked")
     @Behaviour(Type.IMMUTABLE)
     public <T extends DataEngine<E>> boolean equivalence(T list) throws EngineUnderflowException {
-        if(!(list instanceof AbstractList<?>))
+        if(!(Objects.requireNonNull(list) instanceof AbstractList<?>))
             throw new IllegalArgumentException("The passed list must be a subclass of AbstractList");
         else return list.getActiveSize() == this.getActiveSize() & containsAll((AbstractList<E>) list);
     }
@@ -491,7 +496,7 @@ public class FixedArrayList<E> extends AbstractList<E> {
     @Behaviour(Type.MUTABLE)
     @SuppressWarnings("unchecked")
     public <T extends DataEngine<E>> T merge(T list, int start, int end) throws ImmutableException {
-        if(!(list instanceof AbstractList<?>))
+        if(!(Objects.requireNonNull(list) instanceof AbstractList<?>))
             throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
         else if(list.getActiveSize() == 0)
             throw new EngineUnderflowException("List is empty");
@@ -547,7 +552,6 @@ public class FixedArrayList<E> extends AbstractList<E> {
         private int currModCount;
         int currPos;
         FixedArrayList<E> connectedList; //Enclosing List
-        boolean next = false, previous = false;
 
         public FixedArrayListIterator() {
             currPos = 0;
@@ -557,25 +561,25 @@ public class FixedArrayList<E> extends AbstractList<E> {
 
         @Override
         public boolean hasNext() {
-            next = false;
             return currPos < connectedList.getActiveSize();
         }
 
         @Override
         @SuppressWarnings("unchecked")
         public E next() {
-            this.next = true;
+            if(!hasNext())
+                throw new NoSuchElementException("No more elements");
             return (E)connectedList.elements[currPos++];
         }
 
         public boolean hasPrevious(){
-            previous = false;
             return currPos > -1;
         }
 
         @SuppressWarnings("unchecked")
         public E previous(){
-            previous = true;
+            if(!hasPrevious())
+                throw new NoSuchElementException("No more elements");
             return (E)connectedList.elements[currPos--];
         }
 
@@ -607,12 +611,10 @@ public class FixedArrayList<E> extends AbstractList<E> {
                 currModCount++;
 
                 //Simply toggling flag
-                next = false;
             }else {
                 //Performing an auto reset
                 this.currModCount = connectedList.modCount;
                 this.currPos = 0;
-                next = false;
                 throw new ConcurrentModificationException("Alteration occurred iterator access");
             }
         }

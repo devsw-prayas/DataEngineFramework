@@ -22,7 +22,9 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * makes them span across multiple stripes without various side effects. Though slower than a regular
  * non-thread safe implementation, it is preferred due to its safe operations in highly contented situations
  * involving multiple threads. Certain methods act on the entire the internal doubly linked list and any
- * other methods when called during batching will simply return.
+ * other methods when called during batching will simply return. This implementation is one of the few
+ * engines that use {@link Sortable}. It is due to its inherent nature that performing a sort externally
+ * will cause more problems. Thus, a custom sorting algorithm is warranted
  * <p>
  * It is necessary that {@link #isBatching()} is called to check before performing any modifications
  *
@@ -31,7 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @Implementation(ImplementationType.IMPLEMENTATION)
 @EngineNature(nature = Nature.THREAD_MUTABLE, behaviour =  EngineBehaviour.DYNAMIC, order = Ordering.UNSORTED)
-public class ConcurrentArrayList<E> extends AbstractList<E> {
+public class ConcurrentArrayList<E> extends AbstractList<E> implements Sortable {
 
     private LockedStripes lockedStripe;
     private final long partition;
@@ -1336,6 +1338,11 @@ public class ConcurrentArrayList<E> extends AbstractList<E> {
     @Behaviour(Type.MUTABLE)
     public ListIterator<E> concurrentIterator(){
         return new ConcurrentIterator();
+    }
+
+    @Override
+    public void sort() {
+        //TODO
     }
 
     /**

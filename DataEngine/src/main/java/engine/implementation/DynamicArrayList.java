@@ -2,21 +2,20 @@ package engine.implementation;
 
 import data.constants.*;
 import data.core.*;
+import data.core.ListIterator;
+import data.core.RandomAccess;
 import data.function.UnaryOperator;
 import engine.abstraction.AbstractList;
 
-import java.util.Arrays;
-import java.util.ConcurrentModificationException;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 
 /**
  * A fully dynamic array-list implementation that is not thread-safe. An iterator for this data-engine
- * will throw a {@code ConcurrentModificationException} when the list is altered through any means
+ * will throw a {@link ConcurrentModificationException} when the list is altered through any means
  * except the {@code remove} defined by it. Iterator auto-resets. Implementation uses an array of
- * {@code Object}s, to allow a simpler implementation. Null items are not allowed in the list. In
- * case a null object is passed, methods which add to the list will throw {@code NullPointerException}
+ * {@link Object}s, to allow a simpler implementation. Null items are not allowed in the list. In
+ * case a null object is passed, methods which add to the list will throw {@link NullPointerException}
  *
  * @param <E> Type of data being stored.
  *
@@ -25,7 +24,7 @@ import java.util.NoSuchElementException;
  */
 @Implementation(ImplementationType.IMPLEMENTATION)
 @EngineNature(nature = Nature.MUTABLE,  behaviour = EngineBehaviour.DYNAMIC, order = Ordering.UNSORTED)
-public class DynamicArrayList<E> extends AbstractList<E> {
+public class DynamicArrayList<E> extends AbstractList<E> implements RandomAccess {
 
     public DynamicArrayList() {
         super(DEFAULT_CAPACITY);
@@ -66,9 +65,9 @@ public class DynamicArrayList<E> extends AbstractList<E> {
      * Creates it with all the elements and max capacity equal to the provided {@code array.length +
      * DEFAULT_CAPACITY}
      */
-    public DynamicArrayList(E[] array) throws EngineOverflowException, ImmutableException {
+    public DynamicArrayList(E[] array) throws EngineOverflowException {
         super(array.length + DEFAULT_CAPACITY);
-        for(E item : array) add(item);
+        System.arraycopy(array, 0, elements, 0, array.length);
     }
 
     /**
@@ -76,18 +75,19 @@ public class DynamicArrayList<E> extends AbstractList<E> {
      * Creates it with all the elements and max capacity equal to the provided {@code array.length +
      * maxCapacity}. Throws an exception when {@code maxCapacity < list.getActiveSize()}
      */
-    public DynamicArrayList(E[] array, int maxCapacity) throws EngineOverflowException, ImmutableException {
+    public DynamicArrayList(E[] array, int maxCapacity) throws EngineOverflowException {
         super(maxCapacity);
         if(maxCapacity < array.length)
             throw new IndexOutOfBoundsException("Invalid capacity, not enough space");
-        else for(E item : array) this.add(item);
+        else
+            System.arraycopy(array, 0, elements, 0, array.length);
     }
 
     //Single Threaded Implementation, does not expect concurrent operations
-    private transient Object elements[];
+    private transient Object[] elements;
     private int modCount;
 
-    private void incrementModification() {
+    private void modify() {
         modCount++;
     }
 
@@ -99,14 +99,10 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.MUTABLE)
     public void add(E item) {
-        //Obviously there's empty space, no need to worry.
-        if (item == null) throw new NullPointerException("Item is null");
-        else {
-            this.elements[getActiveSize()] = item;
-            setActiveSize(getActiveSize()+1);
-            incrementModification();
-            grow(); //Check if a "grow" is possible
-        }
+        this.elements[getActiveSize()] = Objects.requireNonNull(item);
+        setActiveSize(getActiveSize()+1);
+        modify();
+        grow(); //Check if a "grow" is possible
     }
 
     /**
@@ -122,7 +118,6 @@ public class DynamicArrayList<E> extends AbstractList<E> {
         //Here index must be valid
         if (index < 0 | index > this.getActiveSize())
             throw new IndexOutOfBoundsException("Index out of bounds");
-        else if (item == null) throw new NullPointerException("Item is null");
         else {
             //Perform a "grow" if possible
             grow();
@@ -130,8 +125,8 @@ public class DynamicArrayList<E> extends AbstractList<E> {
             //Shift all the elements
             setActiveSize(getActiveSize()+1);
             System.arraycopy(elements, index, elements, index+1, getActiveSize()-index);
-            elements[index] = item;
-            incrementModification();
+            elements[index] = Objects.requireNonNull(item);
+            modify();
             grow(); //May grow, who knows?
         }
     }
@@ -144,11 +139,16 @@ public class DynamicArrayList<E> extends AbstractList<E> {
      * @param arr   An array containing non-null items to add
      * @param start Start point for adding elements
      * @param end   End point for adding elements
-     * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     @Override
-    public void addAll(E[] arr, int start, int end) throws ImmutableException {
-
+    public void addAll(E[] arr, int start, int end) {
+        if(start > end | start < 0 | end < 0 | end > this.getActiveSize())
+            throw new IndexOutOfBoundsException("Invalid start or end");
+        if(arr.length == 0)
+            throw new EngineUnderflowException("Array is empty");
+        for(Object item: arr) Objects.requireNonNull(item);
+        //Now add all
+        System.arraycopy(arr, start, elements, getActiveSize(), end-start);
     }
 
     /**
@@ -160,6 +160,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     public boolean contains(E item) {
+        Objects.requireNonNull(item);
         for (int i = 0; i < getActiveSize(); i++) {
             if (elements[i].equals(item)) {
                 return true;
@@ -177,12 +178,12 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.MUTABLE)
     public boolean remove(E item) {
-        if (!contains(item)) return false;
+        if (!contains(Objects.requireNonNull(item))) return false;
         else {
             for (int i = 0; i < getActiveSize(); i++) {
                 if (elements[i].equals(item)) {
                     elements[i] = null;
-                    incrementModification();
+                    modify();
                 }
             }
             compress();
@@ -206,7 +207,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
             return false;
         else {
             elements[index] = null;
-            incrementModification();
+            modify();
             compress();
             shrink(); //If possible
             setActiveSize(getActiveSize()-1);
@@ -235,6 +236,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     public int getFirstIndexOf(E item) {
+        Objects.requireNonNull(item);
         for (int i = 0; i < getActiveSize(); i++) if (elements[i].equals(item)) return i;
         return -1;
     }
@@ -249,6 +251,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     public int getLastIndexOf(E item) {
+        Objects.requireNonNull(item);
         for (int i = getActiveSize() - 1; i > 0; i--) if (elements[i].equals(item)) return i;
         return -1;
     }
@@ -276,10 +279,9 @@ public class DynamicArrayList<E> extends AbstractList<E> {
      */
     @Override
     public void set(int idx, E item) {
-        elements[idx] = item;
-        incrementModification();
+        elements[idx] = Objects.requireNonNull(item);
+        modify();
     }
-
 
     /**
      * Creates a list containing all the elements in the range {@code start} to {@code end}.
@@ -291,14 +293,25 @@ public class DynamicArrayList<E> extends AbstractList<E> {
      */
     @Override
     @Behaviour(Type.IMMUTABLE)
+    @SuppressWarnings("unchecked")
     public AbstractList<E> subList(int start, int end) {
-        return null;
+        Object[] temp = new Object[end - start];
+        System.arraycopy(elements, start, temp, 0, end - start);
+        return new DynamicArrayList<>((E[]) temp);
     }
 
+    /**
+     * Performs the operation defined by operator on all the items lying in the range start to end.
+     * The actual elements in the underlying array or structure are directly modified
+     * @param operator An {@link UnaryOperator} that is applied on all the elements present in the range
+     * @param start Starting index
+     * @param end End index
+     */
     @Override
     @Behaviour(Type.MUTABLE)
     @SuppressWarnings("unchecked")
     public void replaceAll(UnaryOperator<E> operator, int start, int end) {
+        Objects.requireNonNull(operator);
         if(end < 0 | start < 0 | start > end)
             throw new IndexOutOfBoundsException("Invalid range");
         if(end > getActiveSize())
@@ -332,7 +345,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
         double loadFactor = (double) getActiveSize() / getMaxCapacity();
         // Check if load factor is below the shrink factor
         if (loadFactor < SHRINK_LOAD_FACTOR) {
-            incrementModification();
+            modify();
             // Calculate new capacity using the golden ratio
             int newMaxCapacity = (int) (Math.floor((this.getMaxCapacity() - this.getMaxCapacity() * GOLDEN_RATIO)));
             elements = Arrays.copyOf(elements, newMaxCapacity);
@@ -351,7 +364,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
         double loadFactor = (double) getActiveSize() / getMaxCapacity();
         // Check if load factor exceeds the threshold for growth
         if (loadFactor > GROWTH_LOAD_FACTOR) {
-            incrementModification();
+            modify();
             // Calculate new capacity using the golden ratio
             int newMaxCapacity = (int) Math.floor(getMaxCapacity() * GOLDEN_RATIO);
             elements = Arrays.copyOf(elements, newMaxCapacity);
@@ -367,7 +380,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.MUTABLE)
     public void reverse() {
-        incrementModification();
+        modify();
         Object t;
         for(int left = 0, right = this.getActiveSize() - 1;left < right; left++, right--){
             t = elements[right];
@@ -384,23 +397,9 @@ public class DynamicArrayList<E> extends AbstractList<E> {
      * @throws EngineUnderflowException In case, the data engine is empty an exception is generated
      */
     @Override
-    @SuppressWarnings("unchecked")
     @Behaviour(Type.IMMUTABLE)
     public E[] toArray() throws EngineUnderflowException {
-        if (elements.length == 0) throw new EngineUnderflowException("List is empty");
-
-        // Count non-null elements
-        int count = 0;
-        for (Object element : elements) if (element != null) count++;
-        if (count == 0) throw new EngineUnderflowException("List is empty");
-
-        // Create array of exact size
-        E[] copy = (E[]) new Object[count];
-
-        // Copy non-null elements
-        int pos = 0;
-        for (Object element : elements) if (element != null) copy[pos++] = (E) element;
-        return copy;
+        return toArray(0 , getActiveSize());
     }
 
     /**
@@ -431,13 +430,13 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @Behaviour(Type.IMMUTABLE)
     @SuppressWarnings("unchecked")
     public E[] toArray(int start, int end) throws EngineUnderflowException {
+        compress();
         if (this.getActiveSize() == 0) throw new EngineUnderflowException("list is empty");
         else if (end < start | end > this.getActiveSize() | start > this.getActiveSize() | end < 0 | start < 0)
             throw new IndexOutOfBoundsException("Invalid subarray range");
-        E[] copy = (E[]) new Object[end - start];
-        for (int i = start - 1; i < end; i++)
-            copy[i - start + 1] = this.get(i);
-        return Arrays.copyOf(copy, end - start);
+        Object[] copy = new Object[end - start];
+        System.arraycopy(elements, start, copy, 0, end - start);
+        return (E[]) copy;
     }
 
     /**
@@ -451,7 +450,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
         else {
             elements = new Object[getMaxCapacity()];
             setActiveSize(0);
-            incrementModification();
+            modify();
             while (this.getMaxCapacity() > DEFAULT_CAPACITY) shrink(); //Shrink until size is near DEFAULT_CAPACITY
             return true;
         }
@@ -468,7 +467,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     public <T extends DataEngine<E>> boolean equals(T list) throws EngineUnderflowException {
-        if (!(list instanceof AbstractList<?>)) throw new IllegalArgumentException("The provided list " +
+        if (!(Objects.requireNonNull(list) instanceof AbstractList<?>)) throw new IllegalArgumentException("The provided list " +
                 "must be a subclass of AbstractList");
         else if (this.getActiveSize() != list.getActiveSize())
             return false;
@@ -498,7 +497,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @SuppressWarnings("unchecked")
     public <T extends DataEngine<E>> boolean equals(T list, int start, int end) throws EngineUnderflowException {
         int size = this.getActiveSize();
-        int size1 = list.getActiveSize();
+        int size1 = Objects.requireNonNull(list).getActiveSize();
         if (!(list instanceof AbstractList<?>))
             throw new IllegalArgumentException("The list passed must be a subclass of AbstractList");
         else if (start > size1 | end > size1 | (end - start + 1) > size1)
@@ -531,7 +530,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @Behaviour(Type.IMMUTABLE)
     @SuppressWarnings("unchecked")
     public <T extends DataEngine<E>> boolean equivalence(T list) throws EngineUnderflowException {
-        if (!(list instanceof AbstractList<?>))
+        if (!(Objects.requireNonNull(list) instanceof AbstractList<?>))
             throw new IllegalArgumentException("The passed list must be a subclass of AbstractList");
         else return list.getActiveSize() == this.getActiveSize() & containsAll((AbstractList<E>) list);
     }
@@ -544,30 +543,9 @@ public class DynamicArrayList<E> extends AbstractList<E> {
      * @return Returns the merged data-engine
      */
     @Override
-    @SuppressWarnings("unchecked")
     @Behaviour(Type.MUTABLE)
-    public <T extends DataEngine<E>> T merge(T list) throws EngineUnderflowException {
-        if (!(list instanceof AbstractList<?>))
-            throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
-        else if (list.getActiveSize() == 0)
-            throw new EngineUnderflowException("List is empty");
-        else {
-            //Generate a copy
-            E[] copy1 = list.toArray();
-            //Generate another copy
-            E[] copy2 = this.toArray();
-            //Now generate a new one
-            //This method might be inefficient!
-            try {
-                DynamicArrayList<E> temp = new DynamicArrayList<>(copy1);
-                //Now inject the rest
-                for (E item : copy2) temp.add(item);
-                return (T) (new DynamicArrayList<>(temp, this.getMaxCapacity() + list.getMaxCapacity()));
-            } catch (EngineOverflowException | ImmutableException exec) {
-                /*This obviously will be never hit */
-                return null;
-            }
-        }
+    public <T extends DataEngine<E>> T merge(T list) throws EngineUnderflowException, ImmutableException {
+        return merge(list, 0, getActiveSize());
     }
 
     /**
@@ -579,32 +557,9 @@ public class DynamicArrayList<E> extends AbstractList<E> {
      * @return Returns the merged data-engine
      */
     @Override
-    @SuppressWarnings("unchecked")
     @Behaviour(Type.MUTABLE)
     public <T extends DataEngine<E>> T merge(T list, int start) throws EngineUnderflowException, ImmutableException {
-        if(!(list instanceof AbstractList<?>))
-            throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
-        else if(list.getActiveSize() == 0)
-            throw new EngineUnderflowException("List is empty");
-        else if(list.getActiveSize() < start | start < 0)
-            throw new IndexOutOfBoundsException("Invalid start index");
-        else {
-            //Generate a copy
-            E[] copy1 = list.toArray(start);
-            //Generate another copy
-            E[] copy2 = this.toArray();
-
-            //Now generate a new one
-            //This method might be inefficient!
-            try {
-                DynamicArrayList<E> temp = new DynamicArrayList<>(copy1);
-                //Now inject the rest
-                for (E item : copy2) temp.add(item);
-                return (T) (new DynamicArrayList<>(temp,
-                        this.getMaxCapacity() + list.getMaxCapacity() - start));
-            } catch (EngineOverflowException exec) { /*This obviously will be never hit */ }
-        }
-        return null; //Unreachable
+        return merge(list, start, getActiveSize());
     }
 
     /**
@@ -620,7 +575,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
     @SuppressWarnings("unchecked")
     @Behaviour(Type.MUTABLE)
     public <T extends DataEngine<E>> T merge(T list, int start, int end) throws EngineUnderflowException, ImmutableException {
-        if(!(list instanceof AbstractList<?>))
+        if(!(Objects.requireNonNull(list) instanceof AbstractList<?>))
             throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
         else if(list.getActiveSize() == 0)
             throw new EngineUnderflowException("List is empty");
@@ -632,16 +587,10 @@ public class DynamicArrayList<E> extends AbstractList<E> {
             //Generate another copy
             E[] copy2 = this.toArray();
             //Now generate a new one
-            //This method might be inefficient!
-            try {
-                DynamicArrayList<E> temp = new DynamicArrayList<>(copy1);
-                //Now inject the rest
-                for (E item : copy2) temp.add(item);
-                return (T) (new DynamicArrayList<>(temp,
-                        this.getMaxCapacity() + list.getMaxCapacity()));
-            } catch (EngineOverflowException exec) { /*This obviously will be never hit */ }
+            DynamicArrayList<E> temp = new DynamicArrayList<>(copy1);
+            temp.addAll(copy2);
+            return (T)temp;
         }
-        return null; //Unreachable
     }
 
     @Override
@@ -659,7 +608,6 @@ public class DynamicArrayList<E> extends AbstractList<E> {
         private int currModCount;
         int currPos;
         DynamicArrayList<E> connectedList; //Enclosing List
-        boolean next = false, previous = false;
 
         public DynamicArrayListIterator() {
             currPos = 0;
@@ -683,25 +631,23 @@ public class DynamicArrayList<E> extends AbstractList<E> {
         @Override
         public void remove() {
             if(this.currModCount == connectedList.modCount) {
-                connectedList.incrementModification();
+                connectedList.modify();
                 currModCount++;
                 //Removing item
 
                 connectedList.elements[currPos--] = null;
                 connectedList.compress(); //Perform adjustment
-                connectedList.incrementModification();
+                connectedList.modify();
                 currModCount++;
 
                 connectedList.shrink();
-                connectedList.incrementModification();
+                connectedList.modify();
                 currModCount++;
                 //Simply toggling flag
-                next = false;
             }else {
                 //Performing an auto reset
                 this.currModCount = connectedList.modCount;
                 this.currPos = 0;
-                next = false;
                 throw new ConcurrentModificationException("Alteration occurred iterator access");
             }
         }
@@ -732,7 +678,7 @@ public class DynamicArrayList<E> extends AbstractList<E> {
             if(modCount != currModCount)
                 throw new ConcurrentModificationException("Alteration occurred during iterator access");
             connectedList.elements[currPos] = item;
-            incrementModification();
+            modify();
             currModCount++;
         }
     }

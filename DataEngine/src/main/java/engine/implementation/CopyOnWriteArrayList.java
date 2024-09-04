@@ -3,6 +3,7 @@ package engine.implementation;
 import data.constants.*;
 import data.core.*;
 import data.core.ListIterator;
+import data.core.RandomAccess;
 import data.function.UnaryOperator;
 import engine.abstraction.AbstractList;
 
@@ -25,7 +26,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 @Implementation(ImplementationType.IMPLEMENTATION)
 @EngineNature(nature = Nature.THREAD_MUTABLE,  behaviour = EngineBehaviour.DYNAMIC, order = Ordering.UNSORTED)
-public class CopyOnWriteArrayList<E> extends AbstractList<E> {
+public class CopyOnWriteArrayList<E> extends AbstractList<E> implements RandomAccess {
 
     //Copy On Write Behavior, explicit locking
     private transient Object elements[];
@@ -170,7 +171,7 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> {
      * @param arr   An array containing non-null items to add
      * @param start Start point for adding elements
      * @param end   End point for adding elements
-     * @throws NullPointerException when the any of the items present in the given array is {@code null}
+     * @throws NullPointerException when any of the items present in the given array is {@code null}
      */
     @Override
     @Behaviour(Type.MUTABLE)
@@ -228,11 +229,18 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> {
         if (!contains(Objects.requireNonNull(item))) return false;
         else {
             Object[] copy = new Object[this.getMaxCapacity()];
+            System.arraycopy(elements, 0, copy, 0, elements.length);
             for (int i = 0; i < getActiveSize(); i++) {
-                if (elements[i].equals(item)) {
-                    elements[i] = null;
+                if (copy[i].equals(item)) {
+                    copy[i] = null;
                     modify();
                 }
+            }
+            try{
+                getWriteLock().lock();
+                elements = copy;
+            }finally {
+                getWriteLock().unlock();
             }
             compress();
             shrink(); //Perform a shrink if possible
@@ -254,7 +262,15 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> {
         else if (elements[index] == null)
             return false;
         else {
-            elements[index] = null;
+            Object[] copy = new Object[getMaxCapacity()];
+            System.arraycopy(elements, 0, copy, 0, elements.length);
+            copy[index] = null;
+            try{
+                getWriteLock().lock();
+                elements = copy;
+            }finally {
+                getWriteLock().unlock();
+            }
             modify();
             compress();
             shrink(); //If possible
@@ -284,8 +300,14 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     public int getFirstIndexOf(E item) {
-        for (int i = 0; i < getActiveSize(); i++) if (elements[i].equals(item)) return i;
-        return -1;
+        try {
+            Objects.requireNonNull(item);
+            getReadLock().lock();
+            for (int i = 0; i < getActiveSize(); i++) if (elements[i].equals(item)) return i;
+            return -1;
+        }finally {
+            getReadLock().lock();
+        }
     }
 
     /**
@@ -298,8 +320,14 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     public int getLastIndexOf(E item) {
-        for (int i = getActiveSize() - 1; i > 0; i--) if (elements[i].equals(item)) return i;
-        return -1;
+        try {
+            Objects.requireNonNull(item);
+            getReadLock().lock();
+            for (int i = getActiveSize() - 1; i > 0; i--) if (elements[i].equals(item)) return i;
+            return -1;
+        }finally {
+            getReadLock().lock();
+        }
     }
 
     /**
@@ -314,7 +342,12 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> {
     public E get(int index) {
         if (index > this.getActiveSize() | index < 0)
             throw new IndexOutOfBoundsException("Invalid index");
-        return (E) elements[index];
+        try {
+            getReadLock().lock();
+            return (E) elements[index];
+        }finally {
+            getReadLock().lock();
+        }
     }
 
     /**
@@ -325,7 +358,15 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> {
      */
     @Override
     public void set(int idx, E item) {
-        elements[idx] = item;
+        Object[] copy = new Object[this.getMaxCapacity()];
+        System.arraycopy(elements, 0, copy, 0, elements.length);
+        try {
+            copy[idx] = item;
+            getWriteLock().lock();
+            elements = copy;
+        }finally {
+            getWriteLock().unlock();
+        }
         modify();
     }
 
@@ -341,6 +382,7 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> {
     @Override
     @Behaviour(Type.IMMUTABLE)
     public AbstractList<E> subList(int start, int end) {
+
         return null;
     }
 

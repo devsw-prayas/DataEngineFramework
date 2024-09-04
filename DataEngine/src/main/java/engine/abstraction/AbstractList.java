@@ -344,7 +344,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
 
     /**
      * Performs the operation defined by {@code operator} on all the items lying in the range {@code start}
-     * to {@code end}. The actual elements in the underlying lock-striped list are modified.
+     * to {@code end}. The actual elements in the underlying array or structure are directly modified
      * @param operator An {@link UnaryOperator} that is applied on all the elements present in the range
      * @param start Starting index
      * @param end End index
