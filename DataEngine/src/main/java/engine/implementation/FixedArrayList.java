@@ -41,7 +41,7 @@ public class FixedArrayList<E> extends AbstractList<E> implements RandomAccess {
      * Creates it with all the elements and max capacity equal to the provided {@code list.maxCapacity() +
      * DEFAULT_CAPACITY}
      */
-    public FixedArrayList(AbstractList<E> list) throws ImmutableException {
+    public FixedArrayList(AbstractList<E> list){
         super(list.getMaxCapacity());
         addAll(list);
     }
@@ -51,7 +51,7 @@ public class FixedArrayList<E> extends AbstractList<E> implements RandomAccess {
      * Creates it with all the elements and max capacity equal to the provided {@code maxCapacity +
      * DEFAULT_CAPACITY}. Throws an exception when {@code maxCapacity < list.getActiveSize()}
      */
-    public FixedArrayList(AbstractList<E> list, int maxCapacity) throws ImmutableException {
+    public FixedArrayList(AbstractList<E> list, int maxCapacity){
         super(maxCapacity);
         if(maxCapacity < list.getActiveSize())
             throw new IndexOutOfBoundsException("Invalid capacity, Not enough space.");
@@ -63,7 +63,7 @@ public class FixedArrayList<E> extends AbstractList<E> implements RandomAccess {
      * Creates it with all the elements and max capacity equal to the provided {@code array.length +
      * DEFAULT_CAPACITY} Null elements are not counted but extra space is allocated
      */
-    public FixedArrayList(E[] array) throws ImmutableException {
+    public FixedArrayList(E[] array){
         super(array.length + DEFAULT_CAPACITY);
         elements = new Object[getMaxCapacity()];
         if(array.length == 0) throw new IllegalArgumentException("Array is empty");
@@ -95,7 +95,7 @@ public class FixedArrayList<E> extends AbstractList<E> implements RandomAccess {
      * Moves all the items to the front of the array, pushing all the null spaces to the end
      */
     @Override
-    protected void compress() throws ImmutableException {
+    protected void compress(){
         incrementModification();
         int insertPos = 0;
         for (int i = 0; i < getActiveSize(); i++)
@@ -207,12 +207,13 @@ public class FixedArrayList<E> extends AbstractList<E> implements RandomAccess {
 
     /**
      * Removes the provided {@code item} from the list, if present.
+     *
      * @param item The item to bo removed
-     * @return Returns true if removal is successful, false otherwise.
+     * @return Returns true if the items are removed false otherwise
      */
     @Behaviour(Type.MUTABLE)
     @Override
-    public boolean remove(E item) throws ImmutableException {
+    public boolean remove(E item){
         Objects.requireNonNull(item);
         //This removes all occurrences of item
         if (!contains(item)) return false;
@@ -236,7 +237,7 @@ public class FixedArrayList<E> extends AbstractList<E> implements RandomAccess {
      */
     @Behaviour(Type.MUTABLE)
     @Override
-    public boolean removeAt(int index) throws ImmutableException {
+    public boolean removeAt(int index){
         if(index > getActiveSize() -1 | index < 0) throw new IndexOutOfBoundsException("Invalid Index");
         else if(elements[index] == null) return false;
         else {
@@ -495,7 +496,7 @@ public class FixedArrayList<E> extends AbstractList<E> implements RandomAccess {
     @Override
     @Behaviour(Type.MUTABLE)
     @SuppressWarnings("unchecked")
-    public <T extends DataEngine<E>> T merge(T list, int start, int end) throws ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start, int end){
         if(!(Objects.requireNonNull(list) instanceof AbstractList<?>))
             throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
         else if(list.getActiveSize() == 0)
@@ -525,7 +526,7 @@ public class FixedArrayList<E> extends AbstractList<E> implements RandomAccess {
      */
     @Override
     @Behaviour(Type.MUTABLE)
-    public <T extends DataEngine<E>> T merge(T list, int start) throws ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start) {
         return merge(list, start, list.getActiveSize());
     }
 
@@ -538,7 +539,7 @@ public class FixedArrayList<E> extends AbstractList<E> implements RandomAccess {
      */
     @Override
     @Behaviour(Type.MUTABLE)
-    public <T extends DataEngine<E>> T merge(T list) throws ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list) {
         return merge(list, 0, list.getActiveSize());
     }
 
@@ -603,13 +604,8 @@ public class FixedArrayList<E> extends AbstractList<E> implements RandomAccess {
                 //Removing item
 
                 connectedList.elements[currPos--] = null;
-                try {
-                    connectedList.compress(); //Perform adjustment
-                } catch (ImmutableException e) {
-                    throw new RuntimeException(e);
-                }
+                connectedList.compress(); //Perform adjustment
                 currModCount++;
-
                 //Simply toggling flag
             }else {
                 //Performing an auto reset

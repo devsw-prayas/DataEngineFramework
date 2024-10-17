@@ -24,7 +24,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * involving multiple threads. Certain methods act on the entire the internal doubly linked list and any
  * other methods when called during batching will simply return. This implementation is one of the few
  * engines that use {@link Sortable}. It is due to its inherent nature that performing a sort externally
- * will cause more problems. Thus, a custom sorting algorithm is warranted
+ * will cause more problems. Thus, a custom sorting algorithm is warranted. This implementation uses
+ * {@link ConcurrentDualPivotQuickSort}, a high performance optimized version of DualPivotQuicksort
  * <p>
  * It is necessary that {@link #isBatching()} is called to check before performing any modifications
  *
@@ -760,7 +761,6 @@ public class ConcurrentArrayList<E> extends AbstractList<E> implements Sortable 
      * Removes the {@code item} if it is present in the list. All possible occurrences are removed
      *
      * @param item The item to bo removed
-     * @return Returns true if removed, false otherwise.
      */
     @Override
     @Behaviour(Type.MUTABLE)
@@ -787,7 +787,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> implements Sortable 
             currStripe.getWriteLock().unlock();
             modify();
         }
-        if(changes > 0){
+        if(changes > 0) {
             compress();
             return true;
         }else return false;
@@ -988,7 +988,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> implements Sortable 
      * @return Returns the new list
      */
     @Override
-    public AbstractList<E> subList(int start, int end) throws ImmutableException {
+    public AbstractList<E> subList(int start, int end)   {
         if(start > end | start < 0 | end < 0)
             throw new IndexOutOfBoundsException("Invalid range parameters");
         AbstractList<E> list = new ConcurrentArrayList<>();
@@ -1013,7 +1013,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> implements Sortable 
      */
     @Override
     @Behaviour(Type.MUTABLE)
-    public void replaceAll(UnaryOperator<E> operator, int start, int end) throws ImmutableException {
+    public void replaceAll(UnaryOperator<E> operator, int start, int end)   {
         if (isBatching) return;
         isBatching = true;
         if(start > end | start < 0 | end < 0)
@@ -1130,7 +1130,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> implements Sortable 
      */
     @Override
     @Behaviour(Type.MUTABLE)
-    public <T extends DataEngine<E>> T merge(T list) throws ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list)   {
         return merge(list, 0 , list.getActiveSize());
     }
 
@@ -1144,7 +1144,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> implements Sortable 
      */
     @Override
     @Behaviour(Type.MUTABLE)
-    public <T extends DataEngine<E>> T merge(T list, int start) throws ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start)   {
         return merge(list, start, list.getActiveSize());
     }
 
@@ -1160,7 +1160,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> implements Sortable 
     @Override
     @SuppressWarnings("unchecked")
     @Behaviour(Type.IMMUTABLE)
-    public <T extends DataEngine<E>> T merge(T list, int start, int end) throws ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start, int end)   {
         //This is a bit of a weird one because we have a lock-stripe segmented array and some type of list.
         if(!isBufferFlushed.get()) flushBuffer();
         if(!(list instanceof AbstractList<?>))
@@ -1341,8 +1341,161 @@ public class ConcurrentArrayList<E> extends AbstractList<E> implements Sortable 
     }
 
     @Override
-    public void sort() {
+    @Behaviour(Type.IMMUTABLE)
+    public void sort(Comparator<?> comparator) {
         //TODO
+    }
+
+    /**
+     * Implements a highly efficient implementation of Dual Pivot Quicksort. This class is built to easily
+     * sort a single stripe. At the end all stripes are merged through multiway merging. This is an example
+     * of implementation of a custom sorting algorithm for a specialized structure.
+     */
+    @SuppressWarnings("unchecked")
+    private final class ConcurrentDualPivotQuickSort{
+        private int MAX_INVERSIONS;
+        Comparator<? super E> comparator;
+        public ConcurrentDualPivotQuickSort(Comparator<? super E> comparator){
+            this.comparator = comparator;
+        }
+
+        /**
+         * The base method that runs it on a given stripe.
+         * It obtains a write lock and starts the sorting
+         * @param stripe The stripe to be sorted
+         */
+        public void sort(LockedStripes stripe){
+            try{
+                stripe.getWriteLock().lock();
+                MAX_INVERSIONS = (int)(stripe.activeCapacity * 0.05);
+                if(stripe.activeCapacity <= 1) return;
+                else if(stripe.activeCapacity == 2) {
+                    //Compare and swap
+                    if (comparator.compare((E) stripe.elements[0], (E) stripe.elements[1]) > 0)
+                        swap(stripe.elements, 0, 1);
+                } else if (isReverseSorted(stripe.elements, 0 , stripe.activeCapacity-1)) {
+                    //Simply reverse it
+                    reverse(stripe.elements, 0 , stripe.activeCapacity-1);
+                } else if (isSorted(stripe.elements, 0 , stripe.activeCapacity-1)) {
+                    return;
+                } else if (isNearlySorted(stripe.elements, 0 , stripe.activeCapacity-1)) {
+                    //Faster for nearly sorted arrays
+                    insertionSort(stripe.elements, 0 , stripe.activeCapacity-1);
+                } else if(stripe.activeCapacity <= 16){
+                    //Direct Insertion sort
+                    insertionSort(stripe.elements, 0, stripe.activeCapacity-1);
+                } else quicksort(stripe.elements, 0, stripe.elements.length - 1);
+            } finally {
+                stripe.getWriteLock().unlock();
+            }
+        }
+
+        /**
+         * Method where the magic happens. A simple Dual Pivot Quicksort implementation
+         * @param array The array for sorting
+         * @param low Lower pivot
+         * @param high Upper pivot
+         */
+        private void quicksort(Object[] array, int low, int high){
+            if(high - low < 17){
+                //Insertion sort for 16 elements
+                insertionSort(array, low, high);
+                return;
+            } else if(!(low < high)) return;
+
+            //Swap if the ordering is wrong
+            if(comparator.compare((E)array[low], (E)array[high]) > 0){
+                swap(array, low, high);
+            }
+
+            //Get pivot elements
+            Object rightPivot = array[high];
+            Object leftPivot = array[low];
+
+            int i = low + 1;
+            int j = high - 1;
+            int k = low + 1;
+
+            //Swapping based on ranges
+            while(k < j){
+                if(comparator.compare((E)array[k] , (E)leftPivot) <= 0){
+                    swap(array, k++, i++);
+                }else if(comparator.compare((E)array[k] , (E)rightPivot) >= 0){
+                    swap(array, k++, j--);
+                }else k++;
+            }
+
+            //Three partitions
+            quicksort(array, low, i - 1);
+            quicksort(array, i + 1, j - 1);
+            quicksort(array, j + 1, high);
+        }
+
+        //Fallback insertion sort for 16 or less elements
+        private void insertionSort(Object[] array, int start, int end){
+            if(array.length <= 1) return;
+            for(int i = start+1; i < end; i++){
+                Object element = array[i];
+                int j = i - 1;
+
+                while(j >= start && comparator.compare((E)element, (E)array[j]) > 0){
+                    array[j+1] = array[j];
+                    j--;
+                }
+                array[j+1] = element;
+            }
+        }
+
+        //Simple swap method
+        private void swap(Object[] array, int i, int j){
+            Object temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+        }
+
+        private int medianOfThree(Object[] array, int low, int mid, int high){
+            if(comparator.compare((E)array[low], (E)array[mid]) > 0)swap(array, low, mid);
+            if (comparator.compare((E)array[mid], (E)array[high]) > 0)swap(array, high, mid);
+            if (comparator.compare((E)array[low], (E)array[mid]) > 0)swap(array, low, mid);
+            return mid;
+        }
+
+        //Checks if it is already sorted
+        private boolean isSorted(Object[] array, int low, int high){
+            for(int i = low + 1; i <= high; i++){
+                if(comparator.compare((E)array[i-1], (E)array[i]) > 0)
+                    return false;
+            }
+            return true;
+        }
+
+        //Checks for a reverse
+        private boolean isReverseSorted(Object[] array, int low, int high){
+            for(int i = low + 1; i <= high; i++){
+                if(comparator.compare((E)array[i-1], (E)array[i]) > 0)
+                    return false;
+            }
+            return true;
+        }
+
+        //Simple reverse
+        private void reverse(Object[] array, int low, int high){
+            while(low < high){
+                swap(array, low++, high--);
+            }
+        }
+
+        //Checks if number of inversions present is greater than that of MAX_INVERSIONS
+        private boolean isNearlySorted(Object[] array, int low, int high){
+            int inversions = 0;
+            for(int i = low + 1; i <= high; i++){
+                if(comparator.compare((E)array[i-1], (E)array[i]) > 0){
+                    inversions++;
+                }
+            }
+
+            return inversions < MAX_INVERSIONS;
+        }
     }
 
     /**

@@ -43,7 +43,7 @@ public class DynamicArrayList<E> extends AbstractList<E> implements RandomAccess
      * Creates it with all the elements and max capacity equal to the provided {@code list.maxCapacity() +
      * DEFAULT_CAPACITY}
      */
-    public DynamicArrayList(AbstractList<E> list) throws EngineOverflowException, ImmutableException {
+    public DynamicArrayList(AbstractList<E> list) throws EngineOverflowException {
         super(list.getMaxCapacity());
         addAll(list);
     }
@@ -53,7 +53,7 @@ public class DynamicArrayList<E> extends AbstractList<E> implements RandomAccess
      * Creates it with all the elements and max capacity equal to the provided {@code maxCapacity +
      * DEFAULT_CAPACITY}. Throws an exception when {@code maxCapacity < list.getActiveSize()}
      */
-    public DynamicArrayList(AbstractList<E> list, int maxCapacity) throws EngineOverflowException, ImmutableException {
+    public DynamicArrayList(AbstractList<E> list, int maxCapacity) throws EngineOverflowException {
         super(maxCapacity);
         if(maxCapacity < list.getActiveSize())
             throw new IndexOutOfBoundsException("Invalid capacity, Not enough space.");
@@ -173,7 +173,7 @@ public class DynamicArrayList<E> extends AbstractList<E> implements RandomAccess
      * Removes the {@code item} if it is present in the list. All possible occurrences are removed
      *
      * @param item The item to bo removed
-     * @return Returns true if removed, false otherwise.
+     * @return
      */
     @Override
     @Behaviour(Type.MUTABLE)
@@ -544,7 +544,7 @@ public class DynamicArrayList<E> extends AbstractList<E> implements RandomAccess
      */
     @Override
     @Behaviour(Type.MUTABLE)
-    public <T extends DataEngine<E>> T merge(T list) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list) throws EngineUnderflowException {
         return merge(list, 0, getActiveSize());
     }
 
@@ -558,7 +558,7 @@ public class DynamicArrayList<E> extends AbstractList<E> implements RandomAccess
      */
     @Override
     @Behaviour(Type.MUTABLE)
-    public <T extends DataEngine<E>> T merge(T list, int start) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start) throws EngineUnderflowException {
         return merge(list, start, getActiveSize());
     }
 
@@ -574,7 +574,7 @@ public class DynamicArrayList<E> extends AbstractList<E> implements RandomAccess
     @Override
     @SuppressWarnings("unchecked")
     @Behaviour(Type.MUTABLE)
-    public <T extends DataEngine<E>> T merge(T list, int start, int end) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start, int end) throws EngineUnderflowException {
         if(!(Objects.requireNonNull(list) instanceof AbstractList<?>))
             throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
         else if(list.getActiveSize() == 0)

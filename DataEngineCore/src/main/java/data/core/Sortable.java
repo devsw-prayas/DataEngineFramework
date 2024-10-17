@@ -1,5 +1,7 @@
 package data.core;
 
+import java.util.Comparator;
+
 /**
  * A special {@link FunctionalInterface} that must be implemented by data-engines that allow
  * thread-safe behavior. The custom annotation processors will force this to be implemented unless the
@@ -13,5 +15,5 @@ package data.core;
  */
 @FunctionalInterface
 public interface Sortable {
-    void sort();
+    void sort(Comparator<?> comparator);
 }

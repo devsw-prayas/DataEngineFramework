@@ -38,9 +38,9 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
 
     //Methods that will add items to the list
 
-    public abstract void add(E item) throws ImmutableException;
+    public abstract void add(E item);
 
-    public abstract void add(int index, E item) throws ImmutableException;
+    public abstract void add(int index, E item);
 
     /**
      * Adds all the items present in {@code list} into the invoking data-engine
@@ -55,7 +55,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     @Behaviour(Type.MUTABLE)
-    public <T extends AbstractList<E>> void addAll(T list) throws ImmutableException {
+    public <T extends AbstractList<E>> void addAll(T list){
         if(list.getActiveSize() > 0){
             for (E item : list) add(item);
         } else throw new IllegalArgumentException("List is empty");
@@ -74,7 +74,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     @Behaviour(Type.MUTABLE)
-    public <T extends AbstractList<E>> void addAllFrom(T list, int start) throws ImmutableException {
+    public <T extends AbstractList<E>> void addAllFrom(T list, int start){
         if(start > list.getActiveSize())
             throw new IndexOutOfBoundsException("Passed index exceeds number of items present");
         else if(start < 0)
@@ -104,7 +104,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     @Behaviour(Type.MUTABLE)
-    public <T extends AbstractList<E>> void addAll(T list, int start, int end) throws ImmutableException {
+    public <T extends AbstractList<E>> void addAll(T list, int start, int end){
         if((end - start + 1) > list.getActiveSize())
             throw new IndexOutOfBoundsException("Passed range exceeds number of items present");
         else if(end > list.getActiveSize() | start > list.getActiveSize() |
@@ -124,7 +124,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param arr The array to be added
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
-    public void addAll(E[] arr) throws ImmutableException {
+    public void addAll(E[] arr){
         addAll(arr, 0, arr.length);
     }
 
@@ -134,7 +134,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param start The start point for adding elements
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
-    public void addAll(E[] arr, int start) throws ImmutableException{
+    public void addAll(E[] arr, int start){
         addAll(arr, start, arr.length);
     }
 
@@ -148,7 +148,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param end End point for adding elements
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
-    public abstract void addAll(E[] arr, int start, int end) throws ImmutableException;
+    public abstract void addAll(E[] arr, int start, int end);
 
     /**
      * Checks if an item is present in the invoking list
@@ -242,11 +242,11 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
 
     /**
      * Removes the {@code item} if it is present in the list. All possible occurrences are removed
+     *
      * @param item The item to bo removed
-     * @return Returns true if removed, false otherwise.
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
-    public abstract boolean remove(E item) throws ImmutableException;
+    public abstract boolean remove(E item);
 
     /**
      * Removes the item present at the given index as long as it is not null
@@ -254,14 +254,14 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @return Returns true if an item is removed, false otherwise
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
-    public abstract boolean removeAt(int index) throws ImmutableException;
+    public abstract boolean removeAt(int index);
 
     /**
      * Clears all the items in the list.
      * @return Returns true if cleared, false otherwise.
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
-    public abstract boolean clear() throws ImmutableException;
+    public abstract boolean clear();
 
     /**
      * This method retains all the items that are present in the {@code list} passed as parameter. This method
@@ -276,7 +276,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     @Behaviour(Type.MUTABLE)
-    public <T extends AbstractList<E>> void retainAll(T list) throws ImmutableException {
+    public <T extends AbstractList<E>> void retainAll(T list){
         if(list.equals(null)) throw new NullPointerException("Null objects are not allowed");
         else if(list.isEmpty()) throw new EngineUnderflowException("List is empty");
         else {
@@ -320,7 +320,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param end End position
      * @return Returns the new list
      */
-    public abstract AbstractList<E> subList(int start, int end) throws ImmutableException;
+    public abstract AbstractList<E> subList(int start, int end)  ;
 
     /**
      * Creates a list containing all the elements in the range {@code start} to {@code getActiveSize()}
@@ -328,7 +328,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @return Returns the new list
      */
     @Behaviour(Type.IMMUTABLE)
-    public AbstractList<E> subList(int start) throws ImmutableException {
+    public AbstractList<E> subList(int start){
         return subList(start, getActiveSize());
     }
 
@@ -338,7 +338,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @throws ImmutableException Thrown when the list is immutable
      */
     @Behaviour(Type.MUTABLE)
-    public void replaceAll(UnaryOperator<E> operator) throws ImmutableException{
+    public void replaceAll(UnaryOperator<E> operator)  {
         replaceAll(operator, 0, getActiveSize());
     }
 
@@ -350,5 +350,5 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @param end End index
      * @throws ImmutableException Thrown when the implementation is immutable.
      */
-    public abstract void replaceAll(UnaryOperator<E> operator, int start, int end) throws ImmutableException;
+    public abstract void replaceAll(UnaryOperator<E> operator, int start, int end)  ;
 }

@@ -54,7 +54,7 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> implements RandomAc
      * Creates it with all the elements and max capacity equal to the provided {@code list.maxCapacity() +
      * DEFAULT_CAPACITY}
      */
-    public CopyOnWriteArrayList(AbstractList<E> list) throws EngineOverflowException, ImmutableException {
+    public CopyOnWriteArrayList(AbstractList<E> list) throws EngineOverflowException{
         super(list.getMaxCapacity());
         addAll(list);
         globalLock = new ReentrantReadWriteLock();
@@ -65,7 +65,7 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> implements RandomAc
      * Creates it with all the elements and max capacity equal to the provided {@code maxCapacity +
      * DEFAULT_CAPACITY}. Throws an exception when {@code maxCapacity < list.getActiveSize()}
      */
-    public CopyOnWriteArrayList(AbstractList<E> list, int maxCapacity) throws EngineOverflowException, ImmutableException {
+    public CopyOnWriteArrayList(AbstractList<E> list, int maxCapacity) throws EngineOverflowException{
         super(maxCapacity);
         if(maxCapacity < list.getActiveSize())
             throw new IndexOutOfBoundsException("Invalid capacity, Not enough space.");
@@ -78,7 +78,7 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> implements RandomAc
      * Creates it with all the elements and max capacity equal to the provided {@code array.length +
      * DEFAULT_CAPACITY}
      */
-    public CopyOnWriteArrayList(E[] array) throws EngineOverflowException, ImmutableException {
+    public CopyOnWriteArrayList(E[] array) throws EngineOverflowException{
         super(array.length + DEFAULT_CAPACITY);
         for(E item : array) add(item);
         globalLock = new ReentrantReadWriteLock();
@@ -221,7 +221,7 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> implements RandomAc
      * Removes the {@code item} if it is present in the list. All possible occurrences are removed
      *
      * @param item The item to bo removed
-     * @return Returns true if removed, false otherwise.
+     * @return
      */
     @Override
     @Behaviour(Type.MUTABLE)
@@ -654,7 +654,7 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> implements RandomAc
                 //Now inject the rest
                 for (E item : copy2) temp.add(item);
                 return (T) (new CopyOnWriteArrayList<>(temp, this.getMaxCapacity() + list.getMaxCapacity()));
-            } catch (EngineOverflowException | ImmutableException exec) {
+            } catch (EngineOverflowException exec) {
                 /*This obviously will be never hit */
                 return null;
             }
@@ -672,7 +672,7 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> implements RandomAc
     @Override
     @SuppressWarnings("unchecked")
     @Behaviour(Type.MUTABLE)
-    public <T extends DataEngine<E>> T merge(T list, int start) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start) throws EngineUnderflowException{
         if(!(list instanceof AbstractList<?>))
             throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
         else if(list.getActiveSize() == 0)
@@ -710,7 +710,7 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> implements RandomAc
     @Override
     @SuppressWarnings("unchecked")
     @Behaviour(Type.MUTABLE)
-    public <T extends DataEngine<E>> T merge(T list, int start, int end) throws EngineUnderflowException, ImmutableException {
+    public <T extends DataEngine<E>> T merge(T list, int start, int end) throws EngineUnderflowException{
         if(!(list instanceof AbstractList<?>))
             throw new IllegalArgumentException("The provided data engine is not a subclass of AbstractList");
         else if(list.getActiveSize() == 0)
