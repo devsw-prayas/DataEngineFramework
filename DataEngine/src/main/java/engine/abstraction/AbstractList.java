@@ -10,8 +10,8 @@ import java.util.Iterator;
 
 /**
  * The top-level abstract class for all List implementations, including thread-safe
- * implementations. It defines methods specific to the behaviour of a list, unique value lists are also considered.
- * @param <E>
+ * implementations. It defines methods specific to the behaviour of a list
+ * @param <E> Type argument of data stored
  *
  * @author Devsw
  */
