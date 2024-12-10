@@ -16,7 +16,7 @@ import data.constants.Type;
 public abstract class AbstractDataEngine<E> implements DataEngine<E>, Iterable<E>{
 
     //The golden ratio, generally used as a growth factor for determining new size
-    protected final static double GOLDEN_RATIO = 1.61803398875;
+        protected final static double GOLDEN_RATIO = 1.61803398875;
 
     //Only for array-based
     protected final static int DEFAULT_CAPACITY = 16;

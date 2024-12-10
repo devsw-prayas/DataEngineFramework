@@ -221,7 +221,7 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> implements RandomAc
      * Removes the {@code item} if it is present in the list. All possible occurrences are removed
      *
      * @param item The item to bo removed
-     * @return
+     * @return Returns true if the given {@code item} is removed
      */
     @Override
     @Behaviour(Type.MUTABLE)
@@ -357,6 +357,7 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> implements RandomAc
      * @param item The item
      */
     @Override
+    @Behaviour(Type.MUTABLE)
     public void set(int idx, E item) {
         Object[] copy = new Object[this.getMaxCapacity()];
         System.arraycopy(elements, 0, copy, 0, elements.length);
@@ -381,9 +382,21 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> implements RandomAc
      */
     @Override
     @Behaviour(Type.IMMUTABLE)
+    @SuppressWarnings("unchecked")
     public AbstractList<E> subList(int start, int end) {
-
-        return null;
+        Object[] items;
+        try {
+            getReadLock().lock();
+            if(start < 0 | end < 0 |  end - start > getActiveSize())
+                throw new IndexOutOfBoundsException("Invalid range");
+            if(end > getActiveSize())
+                throw new IndexOutOfBoundsException("Invalid Index");
+            items = new Object[end - start + 1];
+            System.arraycopy(elements, start, items, 0, items.length);
+        }finally {
+            getReadLock().unlock();
+        }
+        return new CopyOnWriteArrayList<E>((E[]) items);
     }
 
     @Override
@@ -736,6 +749,7 @@ public class CopyOnWriteArrayList<E> extends AbstractList<E> implements RandomAc
     }
 
     @Override
+    @Behaviour(Type.MUTABLE)
     public Iterator<E> iterator() {
         return new CopyOnWriteArrayListIterator();
     }

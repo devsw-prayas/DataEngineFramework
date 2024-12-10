@@ -74,7 +74,7 @@ public abstract class AbstractList<E> extends AbstractDataEngine<E> {
      * @throws ImmutableException Thrown when it is called on an immutable implementation
      */
     @Behaviour(Type.MUTABLE)
-    public <T extends AbstractList<E>> void addAllFrom(T list, int start){
+    public <T extends AbstractList<E>> void addAll(T list, int start){
         if(start > list.getActiveSize())
             throw new IndexOutOfBoundsException("Passed index exceeds number of items present");
         else if(start < 0)

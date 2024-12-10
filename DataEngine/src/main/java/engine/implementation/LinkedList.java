@@ -690,6 +690,7 @@ public class LinkedList<E> extends AbstractList<E> implements Sortable {
     }
 
     @Override
+    @Behaviour(Type.IMMUTABLE)
     public Iterator<E> iterator() {
         return new LinkedIterator();
     }

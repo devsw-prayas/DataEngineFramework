@@ -5,5 +5,5 @@ import data.core.DataEngine;
 import data.core.Implementation;
 
 @Implementation(value = ImplementationType.ABSTRACTION)
-public abstract class AbstractMap<E> implements DataEngine<E> {
+public abstract class AbstractMap{
 }

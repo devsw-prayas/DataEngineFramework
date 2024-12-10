@@ -581,7 +581,7 @@ public class ConcurrentArrayList<E> extends AbstractList<E> implements Sortable 
      */
     @Override
     @Behaviour(Type.MUTABLE)
-    public <T extends AbstractList<E>> void addAllFrom(T list, int start) {
+    public <T extends AbstractList<E>> void addAll(T list, int start) {
         addAll(list, start, list.getActiveSize());
     }
 
@@ -742,18 +742,18 @@ public class ConcurrentArrayList<E> extends AbstractList<E> implements Sortable 
     @Override
     @Behaviour(Type.IMMUTABLE)
     public <T extends AbstractList<E>> boolean containsAll(T list, int start, int end) {
+        if(start > end | start < 0 | end < 0 | end > list.getActiveSize()| start > list.getActiveSize())
+            throw new IndexOutOfBoundsException("Provided range is invalid");
         //We can simply run through each stripe.
         LockedStripes currentStripe = lockedStripe;
         int blocking = 0;
         for(E item : list) {
-            if(blocking++ < start && blocking < end) continue;
-            while (currentStripe.next != null) {
-                if(currentStripe.contains(item)) break;
-                currentStripe = currentStripe.next;
-            }
-            currentStripe = lockedStripe;
+            if(blocking++ < start) continue;
+            if(blocking > end) break;
+            if(!currentStripe.contains(item)) return false;
+            if(blocking % partition == 0) currentStripe = currentStripe.next;
         }
-        return false;
+        return true;
     }
 
 
