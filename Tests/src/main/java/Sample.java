@@ -1,18 +1,22 @@
+import engine.implementation.ConcurrentArrayList;
 import engine.implementation.DynamicArrayList;
+
+import java.util.Iterator;
 
 public class Sample {
     public static void main(String[] args) {
-        DynamicArrayList<Integer> list = new DynamicArrayList<>();
-        list.add(1); //Add items
-        list.add(2);
-        list.add(3);
+        ConcurrentArrayList<Integer> list = new ConcurrentArrayList<>();
+        list.add(1);
+        list.add(9);
+        list.add(135);
+        list.add(56);
+        list.add(5);
         list.add(4);
+        Iterator<Integer> iterator = list.iterator();
 
-        list.set(3, 0); //Set items
-        list.remove(2); //Remove all occurrences to 2
-
-        list.toArray(); //Get an array representation
-        list.clear(); //Empty it, also removeAll()
+        while (iterator.hasNext()){
+            System.out.println(iterator.next());
+        }
     }
 }
 

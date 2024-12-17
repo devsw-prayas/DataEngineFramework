@@ -8,12 +8,13 @@ package data.constants;
  * @since BleedingEdge-alpha-1 *
  */
 public enum EngineBehaviour{
-    DYNAMIC, FIXED_LENGTH;
+    DYNAMIC, FIXED_LENGTH, CONSTANT;
 
     public String toString(){
         return switch (this){
             case DYNAMIC -> "Dynamic";
             case FIXED_LENGTH -> "Static";
+            case CONSTANT -> "Constant";
         };
     }
 }

@@ -19,6 +19,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic.Kind;
 
+import data.constants.EngineBehaviour;
 import data.core.*;
 
 /**
@@ -51,7 +52,6 @@ public class ImplementationProcessor extends AbstractProcessor {
 
                 //Checks if the implementation is "hidden"
                 if(element.getAnnotation(Hidden.class) != null) return true;
-
                 //We know it is a class, now check type
                 switch(element.getAnnotation(Implementation.class).value()){
                     case IMPLEMENTATION -> {
@@ -67,6 +67,8 @@ public class ImplementationProcessor extends AbstractProcessor {
                         if(element.getModifiers().contains(Modifier.ABSTRACT))
                             injectError("An implementation cannot be declared abstract. " +
                                     ((TypeElement)element).getQualifiedName()+ " is declared abstract", element);
+                        else if(element.getAnnotation(EngineNature.class).behaviour() == EngineBehaviour.CONSTANT)
+                            break; //No need to check for iterator
                         else if(!hasEnclosedIterator((TypeElement) element))
                             injectError("An implementation must contain an iterator implementation. " +
                                     ((TypeElement)element).getQualifiedName() +" has no concrete iterator.", element);
@@ -78,6 +80,7 @@ public class ImplementationProcessor extends AbstractProcessor {
                     }
                     case ABSTRACTION -> {
                         //Here we only need to check abstraction and superclass
+                        if(element.getAnnotation(Implementation.class).isSpecialized()) return true;
                         if(!element.getModifiers().contains(Modifier.ABSTRACT))
                             injectError("An abstraction must be declared abstract "
                                     + ((TypeElement)element).getQualifiedName() + " is not declared abstract", element);

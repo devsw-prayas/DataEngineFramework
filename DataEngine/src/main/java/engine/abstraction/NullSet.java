@@ -13,9 +13,9 @@ import data.core.Implementation;
  * A set is called {@code NULL} if it has no elements. This singleton class defines a NULL set
  * Many methods of {@link AbstractSet} and its subclasses are required to return NUll set
  */
-@Implementation(ImplementationType.ABSTRACTION)
-@EngineNature(nature =  Nature.IMMUTABLE, order = Ordering.UNSUPPORTED, behaviour = EngineBehaviour.FIXED_LENGTH)
-public class NullSet extends AbstractSet<Object> {
+@Implementation(ImplementationType.IMPLEMENTATION)
+@EngineNature(nature =  Nature.IMMUTABLE, order = Ordering.UNSUPPORTED, behaviour = EngineBehaviour.CONSTANT)
+public final class NullSet extends AbstractSet<Object> {
 
     private NullSet(){
         setActiveSize(0);

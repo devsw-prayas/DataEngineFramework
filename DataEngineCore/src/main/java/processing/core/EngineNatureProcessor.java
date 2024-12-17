@@ -1,6 +1,7 @@
 package processing.core;
 
 import com.sun.source.tree.*;
+import data.constants.EngineBehaviour;
 import data.constants.ImplementationType;
 import data.constants.Nature;
 import data.constants.Type;
@@ -68,7 +69,8 @@ public class EngineNatureProcessor extends AbstractProcessor {
                 switch (element.getAnnotation(EngineNature.class).nature()){
                     case IMMUTABLE -> {
                         if(typeUtils.asElement(((TypeElement) typeUtils.asElement(element.asType())).getSuperclass())
-                                .getModifiers().contains(Modifier.ABSTRACT)){
+                                .getModifiers().contains(Modifier.ABSTRACT) &&
+                        element.getAnnotation(EngineNature.class).behaviour() != EngineBehaviour.CONSTANT){
                             injectError("An IMMUTABLE implementation cannot have an abstract superclass ", element);
                         }
                         try {
@@ -168,7 +170,8 @@ public class EngineNatureProcessor extends AbstractProcessor {
      * Internal helper method, verifies if the implementation is valid for further checking
      */
     private boolean isValid(Element element) {
-        if(element.getAnnotation(EngineNature.class).nature() == Nature.IMMUTABLE){
+        if(element.getAnnotation(EngineNature.class).nature() == Nature.IMMUTABLE &&
+            element.getAnnotation(EngineNature.class).behaviour() != EngineBehaviour.CONSTANT){
             //Now need more validation
             TypeMirror superClass = ((TypeElement) typeUtils.asElement(element.asType())).getSuperclass();
             //Should be a MUTABLE implementation

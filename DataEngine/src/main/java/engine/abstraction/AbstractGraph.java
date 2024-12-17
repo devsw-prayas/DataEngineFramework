@@ -2,10 +2,7 @@ package engine.abstraction;
 
 import data.constants.ImplementationType;
 import data.constants.Type;
-import data.core.AbstractDataEngine;
-import data.core.Behaviour;
-import data.core.DataEngine;
-import data.core.Implementation;
+import data.core.*;
 
 /**
  * Top level class for all graph implementations. Many features are not declared in this class due to
@@ -23,8 +20,12 @@ public abstract class AbstractGraph<E, N> extends AbstractDataEngine<E> {
     protected int edgeCount;
     protected int nodeCount;
 
+    private AbstractGraph(int dummy){
+        super(dummy);
+    }
+
     public AbstractGraph(){
-        super(DEFAULT_CAPACITY);
+        this(0);
         this.edgeCount = 0;
         this.nodeCount = 0;
     }
@@ -52,6 +53,36 @@ public abstract class AbstractGraph<E, N> extends AbstractDataEngine<E> {
     @Behaviour(Type.UNSUPPORTED)
     protected void setMaxCapacity(int maxCapacity) {
         throw new UnsupportedOperationException("Not supported. Use 'getNodeCount' and 'getEdgeCount' ");
+    }
+
+    @Override
+    @Behaviour(Type.UNSUPPORTED)
+    public <T extends DataEngine<E>> T merge(T de, int start, int end) throws ImmutableException {
+        throw new UnsupportedOperationException("Method not supported");
+    }
+
+    @Override
+    @Behaviour(Type.UNSUPPORTED)
+    public <T extends DataEngine<E>> T merge(T de, int start) throws ImmutableException {
+        throw new UnsupportedOperationException("Method not supported");
+    }
+
+    @Override
+    @Behaviour(Type.UNSUPPORTED)
+    public E[] toArray(int start, int end) {
+        throw new UnsupportedOperationException("Method not supported");
+    }
+
+    @Override
+    @Behaviour(Type.UNSUPPORTED)
+    public E[] toArray(int start) {
+        throw new UnsupportedOperationException("Method not supported");
+    }
+
+    @Override
+    @Behaviour(Type.UNSUPPORTED)
+    public <T extends DataEngine<E>> boolean equals(T de, int start, int end) {
+        throw new UnsupportedOperationException("Method not supported");
     }
 
     /**

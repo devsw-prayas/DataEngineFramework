@@ -1,9 +1,7 @@
 package engine.abstraction;
 
 import data.constants.ImplementationType;
-import data.constants.Type;
 import data.core.AbstractDataEngine;
-import data.core.Behaviour;
 import data.core.Implementation;
 import data.function.UnaryOperator;
 import data.core.ImmutableException;
@@ -39,7 +37,6 @@ public abstract class AbstractDeque<E> extends AbstractDataEngine<E>{
      * @throws ImmutableException Thrown when the invoking deque is immutable
      * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
      */
-    @Behaviour(Type.UNSUPPORTED)
     public abstract boolean addFirst(E element);
 
     /**
@@ -48,7 +45,6 @@ public abstract class AbstractDeque<E> extends AbstractDataEngine<E>{
      * @throws ImmutableException Thrown when the invoking deque is immutable
      * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
      */
-    @Behaviour(Type.UNSUPPORTED)
     public abstract <T extends AbstractDeque<E>> void addFirstAll(T deque);
 
     /**
@@ -57,7 +53,6 @@ public abstract class AbstractDeque<E> extends AbstractDataEngine<E>{
      * @throws ImmutableException Thrown when the invoking deque is immutable
      * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
      */
-    @Behaviour(Type.UNSUPPORTED)
     public abstract <T extends AbstractDeque<E>> void addLastAll(T deque);
 
     /**
@@ -67,7 +62,6 @@ public abstract class AbstractDeque<E> extends AbstractDataEngine<E>{
      * @throws ImmutableException Thrown when the invoking deque is immutable
      * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
      */
-    @Behaviour(Type.UNSUPPORTED)
     public abstract boolean addLast(E element);
 
     /**
@@ -76,7 +70,6 @@ public abstract class AbstractDeque<E> extends AbstractDataEngine<E>{
      * @throws ImmutableException Thrown when the invoking deque is immutable
      * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
      */
-    @Behaviour(Type.UNSUPPORTED)
     public abstract E removeFirst();
 
     /**
@@ -85,21 +78,18 @@ public abstract class AbstractDeque<E> extends AbstractDataEngine<E>{
      * @throws ImmutableException Thrown when the invoking deque is immutable
      * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
      */
-    @Behaviour(Type.UNSUPPORTED)
     public abstract E removeLast();
 
     /**
      * Obtains the element present at the head of the invoking deque
      * @return Returns the element present at the head
      */
-    @Behaviour(Type.UNSUPPORTED)
     public abstract E peekFirst();
 
     /**
      * Obtains the element present at the tail of the invoking deque
      * @return Returns the element present at the tail
      */
-    @Behaviour(Type.UNSUPPORTED)
     public abstract E peekLast();
 
     /**
@@ -107,7 +97,6 @@ public abstract class AbstractDeque<E> extends AbstractDataEngine<E>{
      * @param element The element to be checked for
      * @return Returns true if present, false otherwise
      */
-    @Behaviour(Type.UNSUPPORTED)
     public abstract boolean contains(E element);
 
     /**
@@ -116,23 +105,8 @@ public abstract class AbstractDeque<E> extends AbstractDataEngine<E>{
      * @return Returns true if all elements are present, false otherwise
      * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
      */
-    @Behaviour(Type.IMMUTABLE)
-    public <T extends AbstractDeque<E>> boolean containsAll(T deque){
-        return containsAll(0, deque.getActiveSize() -1, deque);
-    }
+    public abstract  <T extends AbstractDeque<E>> boolean containsAll(T deque);
 
-    /**
-     * Checks if all the elements of {@code deque} lying beyond {@code start} are in the
-     * invoking deque.
-     * @param start Start index
-     * @param deque Deque to be checked for
-     * @return Returns true if all elements are present, false otherwise
-     * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
-     */
-    @Behaviour(Type.IMMUTABLE)
-    public <T extends AbstractDeque<E>> boolean containsAll(int start, T deque){
-        return containsAll(start, deque.getActiveSize()-1, deque);
-    }
 
     /**
      * Retains all the elements of {@code deque} that are present in the given deque
@@ -140,20 +114,7 @@ public abstract class AbstractDeque<E> extends AbstractDataEngine<E>{
      * @throws ImmutableException Thrown when the invoking deque is immutable
      * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
      */
-    @Behaviour(Type.UNSUPPORTED)
     public abstract <T extends AbstractDeque<E>> void retainAll(T deque);
-
-    /**
-     * Checks if all the elements present in the given {@code deque} lying between {@code start}
-     * and {@code end} are present in the invoking deque.
-     * @param start Start Index
-     * @param end End Index
-     * @param deque The deque to be checked for
-     * @return Returns true if all the elements are present, false otherwise
-     * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
-     */
-    @Behaviour(Type.UNSUPPORTED)
-    public abstract <T extends AbstractDeque<E>> boolean containsAll(int start, int end, T deque);
 
     /**
      * Merges the given {@code deque} to the tail of the invoking deque
@@ -161,7 +122,6 @@ public abstract class AbstractDeque<E> extends AbstractDataEngine<E>{
      * @return Returns the merged deque
      * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
      */
-    @Behaviour(Type.UNSUPPORTED)
     public abstract <T extends AbstractDeque<E>> T mergeLast(T deque);
 
     /**
@@ -170,7 +130,6 @@ public abstract class AbstractDeque<E> extends AbstractDataEngine<E>{
      * @return Returns the merged deque
      * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
      */
-    @Behaviour(Type.UNSUPPORTED)
     public abstract <T extends AbstractDeque<E>> T mergeFirst(T deque);
 
     /**
@@ -180,20 +139,5 @@ public abstract class AbstractDeque<E> extends AbstractDataEngine<E>{
      * @throws ImmutableException Thrown when the invoking deque is immutable
      * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
      */
-    @Behaviour(Type.MUTABLE)
-    public void replaceAll(UnaryOperator<E> operator) {
-        replaceAll(operator, 0, getActiveSize()-1);
-    }
-
-    /**
-     * Modifies and replaces all the elements present in the invoking deque lying in the range
-     * {@code start} and {@code end} by passing through an {@link UnaryOperator}
-     * @param operator The {@link UnaryOperator} to be used
-     * @param start Start index
-     * @param end End index
-     * @throws ImmutableException Thrown when the invoking deque is immutable
-     * @throws EngineUnderflowException Thrown when the {@code deque} is empty.
-     */
-    @Behaviour(Type.UNSUPPORTED)
-    public abstract void replaceAll(UnaryOperator<E> operator, int start, int end);
+    public abstract void replaceAll(UnaryOperator<E> operator);
 }
